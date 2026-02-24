@@ -10,16 +10,18 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { AlertCircle, CheckCircle2, Loader2 } from "lucide-react"
 import { apiClient } from "@/lib/api-client"
+import { FileUploadWidget } from "@/components/file-upload-widget"
 
 interface ApplicationModalProps {
   isOpen: boolean
   serviceId: string
   serviceName: string
+  applicationId?: string
   onClose: () => void
   onSuccess: () => void
 }
 
-export function ApplicationModal({ isOpen, serviceId, serviceName, onClose, onSuccess }: ApplicationModalProps) {
+export function ApplicationModal({ isOpen, serviceId, serviceName, applicationId, onClose, onSuccess }: ApplicationModalProps) {
   const [formData, setFormData] = useState({
     fullName: "",
     phone: "",
@@ -126,6 +128,13 @@ export function ApplicationModal({ isOpen, serviceId, serviceName, onClose, onSu
                 rows={3}
               />
             </div>
+
+            {applicationId && (
+              <div>
+                <Label className="text-white mb-2 block">Upload Required Documents</Label>
+                <FileUploadWidget applicationId={applicationId} />
+              </div>
+            )}
 
             <div className="flex gap-2 pt-4">
               <Button
