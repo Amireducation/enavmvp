@@ -1,0 +1,82 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:14-alpine
+    environment:
+      POSTGRES_DB: ethiopian_navigator
+      POSTGRES_USER: navigator
+      POSTGRES_PASSWORD: navigator_dev
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U navigator"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    ports:
+      - "5000:5000"
+    environment:
+      AZURE_KEYVAULT_URI: ${AZURE_KEYVAULT_URI:-}
+      AZURE_TENANT_ID: ${AZURE_TENANT_ID:-}
+      AZURE_CLIENT_ID: ${AZURE_CLIENT_ID:-}
+      AZURE_CLIENT_SECRET: ${AZURE_CLIENT_SECRET:-}
+      # Local development defaults
+      POSTGRES_CONN_STRING: ${POSTGRES_CONN_STRING:-postgresql://navigator:navigator_dev@postgres:5432/ethiopian_navigator}
+      JWT_SECRET: ${JWT_SECRET:-dev-secret-key-change-in-production}
+      NODE_ENV: ${NODE_ENV:-development}
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:3000}
+      PORT: 5000
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./backend:/app
+
+  chatbot:
+    build:
+      context: .
+      dockerfile: Dockerfile.chatbot
+    ports:
+      - "8000:8000"
+    environment:
+      AZURE_KEYVAULT_URI: ${AZURE_KEYVAULT_URI:-}
+      AZURE_TENANT_ID: ${AZURE_TENANT_ID:-}
+      AZURE_CLIENT_ID: ${AZURE_CLIENT_ID:-}
+      AZURE_CLIENT_SECRET: ${AZURE_CLIENT_SECRET:-}
+      # Local development defaults
+      AZURE_OPENAI_ENDPOINT: ${AZURE_OPENAI_ENDPOINT:-}
+      AZURE_OPENAI_API_KEY: ${AZURE_OPENAI_API_KEY:-}
+      AZURE_OPENAI_DEPLOYMENT: ${AZURE_OPENAI_DEPLOYMENT:-gpt-4}
+      AZURE_SEARCH_ENDPOINT: ${AZURE_SEARCH_ENDPOINT:-}
+      AZURE_SEARCH_API_KEY: ${AZURE_SEARCH_API_KEY:-}
+      FLASK_ENV: ${FLASK_ENV:-development}
+      FLASK_DEBUG: ${FLASK_DEBUG:-1}
+    volumes:
+      - ./ai-chatbot:/app
+
+  frontend:
+    image: node:18-alpine
+    working_dir: /app
+    ports:
+      - "3000:3000"
+    environment:
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:5000/api}
+      NEXT_PUBLIC_CHATBOT_URL: ${NEXT_PUBLIC_CHATBOT_URL:-http://localhost:8000}
+    command: sh -c "npm install && npm run dev"
+    volumes:
+      - .:/app
+
+volumes:
+  postgres_data:
+
+networks:
+  default:
+    name: ethiopian-navigator-network

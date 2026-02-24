@@ -1,0 +1,13 @@
+[
+  {
+    "request_id": "3c543777-c8fd-451d-8e99-fc197908082c",
+    "user_id": "test_user",
+    "service_name": "Test request",
+    "service_description": null,
+    "category_suggestion": null,
+    "justification": null,
+    "status": "submitted",
+    "priority": "medium",
+    "created_at": "2025-10-13T19:28:57.844Z"
+  }
+]

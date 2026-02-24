@@ -1,0 +1,174 @@
+{
+  "services": [
+    {
+      "service_id": "srv_001",
+      "category": "Identification Documents",
+      "name": "Birth Certificate Application",
+      "description": "Apply for an official birth certificate issued by the Vital Events Registration Agency",
+      "responsible_agency": "Vital Events Registration Agency",
+      "estimated_processing_time": "3-5 business days",
+      "service_fee": 50,
+      "requirements": ["Parent's ID", "Hospital Birth Record", "Marriage Certificate (if applicable)"],
+      "is_archived": false
+    },
+    {
+      "service_id": "srv_002",
+      "category": "Identification Documents",
+      "name": "National ID Application",
+      "description": "Apply for a national identification card for citizens above 16 years of age",
+      "responsible_agency": "National ID Program",
+      "estimated_processing_time": "10-15 business days",
+      "service_fee": 100,
+      "requirements": ["Birth Certificate", "Proof of Residence", "Two Passport Photos"],
+      "is_archived": false
+    },
+    {
+      "service_id": "srv_003",
+      "category": "Identification Documents",
+      "name": "Passport Application",
+      "description": "Apply for an Ethiopian passport for international travel",
+      "responsible_agency": "Immigration and Nationality Affairs",
+      "estimated_processing_time": "15-20 business days",
+      "service_fee": 650,
+      "requirements": ["National ID", "Birth Certificate", "Four Passport Photos", "Residence Permit (if abroad)"],
+      "is_archived": false
+    },
+    {
+      "service_id": "srv_004",
+      "category": "Business & Commerce",
+      "name": "Business License Registration",
+      "description": "Register a new business and obtain official business license",
+      "responsible_agency": "Ministry of Trade and Industry",
+      "estimated_processing_time": "7-10 business days",
+      "service_fee": 500,
+      "requirements": ["Business Plan", "Owner's ID", "Proof of Business Address", "Tax Registration"],
+      "is_archived": false
+    },
+    {
+      "service_id": "srv_005",
+      "category": "Business & Commerce",
+      "name": "Tax Identification Number (TIN)",
+      "description": "Obtain a Tax Identification Number for individuals or businesses",
+      "responsible_agency": "Ethiopian Revenue and Customs Authority",
+      "estimated_processing_time": "2-3 business days",
+      "service_fee": 0,
+      "requirements": ["National ID or Business License", "Proof of Address"],
+      "is_archived": false
+    },
+    {
+      "service_id": "srv_006",
+      "category": "Legal & Judicial",
+      "name": "Marriage Certificate",
+      "description": "Register marriage and obtain official marriage certificate",
+      "responsible_agency": "Vital Events Registration Agency",
+      "estimated_processing_time": "1-2 business days",
+      "service_fee": 100,
+      "requirements": ["Both Partners' IDs", "Two Witnesses", "Proof of Legal Age"],
+      "is_archived": false
+    },
+    {
+      "service_id": "srv_007",
+      "category": "Legal & Judicial",
+      "name": "Divorce Certificate",
+      "description": "Process divorce and obtain official divorce certificate",
+      "responsible_agency": "Family Court",
+      "estimated_processing_time": "30-60 days",
+      "service_fee": 200,
+      "requirements": ["Marriage Certificate", "Both Partners' IDs", "Court Filing Documents"],
+      "is_archived": false
+    },
+    {
+      "service_id": "srv_008",
+      "category": "Property & Land",
+      "name": "Land Ownership Certificate",
+      "description": "Register land ownership and obtain official certificate",
+      "responsible_agency": "Land Administration Authority",
+      "estimated_processing_time": "20-30 business days",
+      "service_fee": 1000,
+      "requirements": ["Property Survey Document", "Owner's ID", "Transfer Agreement", "Tax Clearance"],
+      "is_archived": false
+    },
+    {
+      "service_id": "srv_009",
+      "category": "Property & Land",
+      "name": "Building Permit",
+      "description": "Obtain permit for new construction or major renovation",
+      "responsible_agency": "Urban Planning Authority",
+      "estimated_processing_time": "15-25 business days",
+      "service_fee": 2000,
+      "requirements": [
+        "Land Certificate",
+        "Architectural Plans",
+        "Engineer's Approval",
+        "Environmental Impact Assessment"
+      ],
+      "is_archived": false
+    },
+    {
+      "service_id": "srv_010",
+      "category": "Health & Social Services",
+      "name": "Health Insurance Registration",
+      "description": "Register for national health insurance program",
+      "responsible_agency": "Ethiopian Health Insurance Agency",
+      "estimated_processing_time": "5-7 business days",
+      "service_fee": 150,
+      "requirements": ["National ID", "Proof of Employment or Income", "Passport Photo"],
+      "is_archived": false
+    },
+    {
+      "service_id": "srv_011",
+      "category": "Transportation",
+      "name": "Driver's License",
+      "description": "Apply for or renew driver's license",
+      "responsible_agency": "Transport Authority",
+      "estimated_processing_time": "10-15 business days",
+      "service_fee": 300,
+      "requirements": ["National ID", "Medical Certificate", "Driving School Certificate", "Eye Test Results"],
+      "is_archived": false
+    },
+    {
+      "service_id": "srv_012",
+      "category": "Transportation",
+      "name": "Vehicle Registration",
+      "description": "Register a new or used vehicle",
+      "responsible_agency": "Transport Authority",
+      "estimated_processing_time": "5-7 business days",
+      "service_fee": 800,
+      "requirements": ["Purchase Invoice", "Owner's ID", "Insurance Certificate", "Vehicle Inspection Report"],
+      "is_archived": false
+    },
+    {
+      "service_id": "srv_013",
+      "category": "Education",
+      "name": "Educational Certificate Authentication",
+      "description": "Authenticate educational certificates for employment or further studies",
+      "responsible_agency": "Ministry of Education",
+      "estimated_processing_time": "7-10 business days",
+      "service_fee": 200,
+      "requirements": ["Original Certificate", "Transcript", "ID", "Letter of Request"],
+      "is_archived": false
+    },
+    {
+      "service_id": "srv_014",
+      "category": "Utilities",
+      "name": "Electricity Connection",
+      "description": "Apply for new electricity connection to residential or commercial property",
+      "responsible_agency": "Ethiopian Electric Utility",
+      "estimated_processing_time": "15-20 business days",
+      "service_fee": 500,
+      "requirements": ["Property Ownership Document", "ID", "Property Plan", "Wiring Certificate"],
+      "is_archived": false
+    },
+    {
+      "service_id": "srv_015",
+      "category": "Utilities",
+      "name": "Water Connection",
+      "description": "Apply for new water connection to property",
+      "responsible_agency": "Water and Sewerage Authority",
+      "estimated_processing_time": "10-15 business days",
+      "service_fee": 400,
+      "requirements": ["Property Ownership Document", "ID", "Property Plan"],
+      "is_archived": false
+    }
+  ]
+}

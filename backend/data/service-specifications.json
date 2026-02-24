@@ -1,0 +1,213 @@
+{
+  "services": [
+    {
+      "id": "health-insurance-registration",
+      "name": "Health Insurance Registration",
+      "category": "Healthcare",
+      "description": "Register for national health insurance coverage",
+      "processingTime": "3-5 business days",
+      "applicableAge": { "min": 18, "max": null },
+      "requirements": [
+        "Valid ID document",
+        "Proof of residence",
+        "Employment letter or self-employment proof",
+        "Income statement"
+      ],
+      "cost": 0,
+      "currency": "ETB",
+      "office": "Health Ministry Regional Office",
+      "contactEmail": "health.insurance@gov.et",
+      "hotline": "+251-1-5503850",
+      "languages": ["amharic", "oromo", "english"]
+    },
+    {
+      "id": "business-license",
+      "name": "Business License Registration",
+      "category": "Commerce",
+      "description": "Register a new business and obtain business license",
+      "processingTime": "5-7 business days",
+      "applicableAge": { "min": 18, "max": null },
+      "requirements": [
+        "ID or passport",
+        "Business plan",
+        "Proof of capital",
+        "Lease agreement or property ownership",
+        "Tax identification number"
+      ],
+      "cost": 500,
+      "currency": "ETB",
+      "office": "Trade and Industry Bureau",
+      "contactEmail": "trade.bureau@gov.et",
+      "hotline": "+251-1-4403000",
+      "languages": ["amharic", "english"]
+    },
+    {
+      "id": "passport-application",
+      "name": "Passport Application",
+      "category": "Civil Status",
+      "description": "Apply for or renew Ethiopian passport",
+      "processingTime": "10 business days",
+      "applicableAge": { "min": 0, "max": null },
+      "requirements": [
+        "Birth certificate",
+        "ID card or previous passport",
+        "Completed application form",
+        "2 passport photos",
+        "Proof of Ethiopian citizenship"
+      ],
+      "cost": 1000,
+      "currency": "ETB",
+      "office": "Immigration and Citizenship Authority",
+      "contactEmail": "passport@immig.gov.et",
+      "hotline": "+251-1-6181818",
+      "languages": ["amharic", "english", "oromo"]
+    },
+    {
+      "id": "land-registration",
+      "name": "Land Registration and Title",
+      "category": "Property",
+      "description": "Register land and obtain property title deed",
+      "processingTime": "15-20 business days",
+      "applicableAge": { "min": 18, "max": null },
+      "requirements": [
+        "Land survey certificate",
+        "Ownership proof documents",
+        "ID document",
+        "Tax clearance certificate",
+        "Neighbors' approval"
+      ],
+      "cost": 2500,
+      "currency": "ETB",
+      "office": "Land Administration Office",
+      "contactEmail": "land.reg@gov.et",
+      "hotline": "+251-1-5544000",
+      "languages": ["amharic"]
+    },
+    {
+      "id": "scholarship-application",
+      "name": "University Scholarship Application",
+      "category": "Education",
+      "description": "Apply for government scholarship for higher education",
+      "processingTime": "30 days",
+      "applicableAge": { "min": 16, "max": 30 },
+      "requirements": [
+        "High school diploma",
+        "Entrance exam results",
+        "Birth certificate",
+        "ID card",
+        "Academic transcripts",
+        "Essay and motivation letter"
+      ],
+      "cost": 0,
+      "currency": "ETB",
+      "office": "Ministry of Education",
+      "contactEmail": "scholarship@moe.gov.et",
+      "hotline": "+251-1-5518000",
+      "languages": ["amharic", "english"]
+    },
+    {
+      "id": "marriage-certificate",
+      "name": "Marriage Registration Certificate",
+      "category": "Civil Status",
+      "description": "Register marriage and obtain official marriage certificate",
+      "processingTime": "2-3 business days",
+      "applicableAge": { "min": 18, "max": null },
+      "requirements": [
+        "ID documents of both parties",
+        "Birth certificates",
+        "Parental consent forms",
+        "Medical clearance certificate",
+        "Completed application form"
+      ],
+      "cost": 300,
+      "currency": "ETB",
+      "office": "Civil Registry Office",
+      "contactEmail": "civil.registry@gov.et",
+      "hotline": "+251-1-5514000",
+      "languages": ["amharic", "oromo"]
+    },
+    {
+      "id": "tax-id-registration",
+      "name": "Tax ID Registration",
+      "category": "Finance",
+      "description": "Register for Tax Identification Number (TIN)",
+      "processingTime": "1 business day",
+      "applicableAge": { "min": 18, "max": null },
+      "requirements": [
+        "ID document",
+        "Proof of address",
+        "Business registration (if applicable)",
+        "Bank account details"
+      ],
+      "cost": 0,
+      "currency": "ETB",
+      "office": "Ethiopian Revenue and Customs Authority",
+      "contactEmail": "tax.info@erca.gov.et",
+      "hotline": "+251-1-5530000",
+      "languages": ["amharic", "english"]
+    },
+    {
+      "id": "driving-license",
+      "name": "Driving License",
+      "category": "Transportation",
+      "description": "Apply for or renew driving license",
+      "processingTime": "5 business days",
+      "applicableAge": { "min": 18, "max": null },
+      "requirements": [
+        "ID document",
+        "Medical certificate",
+        "Proof of residence",
+        "Driving test completion",
+        "Completed application"
+      ],
+      "cost": 600,
+      "currency": "ETB",
+      "office": "Federal Police Transport Authority",
+      "contactEmail": "driving.license@police.gov.et",
+      "hotline": "+251-1-5511111",
+      "languages": ["amharic"]
+    },
+    {
+      "id": "birth-certificate",
+      "name": "Birth Certificate Registration",
+      "category": "Civil Status",
+      "description": "Register birth and obtain official birth certificate",
+      "processingTime": "1-2 business days",
+      "applicableAge": { "min": 0, "max": null },
+      "requirements": [
+        "Parent ID documents",
+        "Hospital discharge summary or midwife report",
+        "Marriage certificate (if applicable)",
+        "Completed birth registration form"
+      ],
+      "cost": 50,
+      "currency": "ETB",
+      "office": "Local Civil Registry Office",
+      "contactEmail": "birth.registry@gov.et",
+      "hotline": "+251-1-5512000",
+      "languages": ["amharic", "oromo"]
+    },
+    {
+      "id": "import-export-license",
+      "name": "Import/Export License",
+      "category": "Commerce",
+      "description": "Obtain license for import and export business",
+      "processingTime": "7-10 business days",
+      "applicableAge": { "min": 18, "max": null },
+      "requirements": [
+        "Business registration",
+        "Tax ID",
+        "Bank statements",
+        "Business plan",
+        "Company representative ID",
+        "Insurance certificate"
+      ],
+      "cost": 1500,
+      "currency": "ETB",
+      "office": "Trade and Industry Bureau",
+      "contactEmail": "trade.bureau@gov.et",
+      "hotline": "+251-1-4403000",
+      "languages": ["amharic", "english"]
+    }
+  ]
+}

@@ -1,0 +1,39 @@
+{
+  "name": "ethiopian-navigator-backend",
+  "version": "0.1.0",
+  "description": "Backend API for Ethiopian Navigator MVP",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js",
+    "smoke-test": "node scripts/smoke-test.js",
+    "test": "jest --runInBand",
+    "test:integration": "jest --runInBand \"tests/integration/**/*.test.js\"",
+    "migrate": "node-pg-migrate up",
+    "migrate:down": "node-pg-migrate down",
+    "migrate:latest": "node-pg-migrate up",
+    "migrate:create": "node-pg-migrate create",
+    "db:setup": "node scripts/setup-db.js",
+    "db:test": "node scripts/test-db.js",
+    "db:seed": "node scripts/seed-comprehensive.js"
+  },
+  "dependencies": {
+    "@azure/identity": "^4.0.0",
+    "@azure/keyvault-secrets": "^4.7.0",
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.0.3",
+    "express": "^4.18.2",
+    "jsonwebtoken": "^9.0.0",
+    "node-fetch": "^2.7.0",
+    "pg": "^8.11.0",
+    "uuid": "^9.0.0"
+  },
+  "devDependencies": {
+    "jest": "^29.0.0",
+    "node-pg-migrate": "^6.2.0",
+    "nodemon": "^3.1.10",
+    "supertest": "^6.3.3",
+    "testcontainers": "^11.7.1"
+  }
+}
