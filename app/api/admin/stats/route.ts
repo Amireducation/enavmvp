@@ -4,7 +4,7 @@ import { getUserFromRequest } from "@/lib/api-utils"
 
 export async function GET(request: Request) {
   try {
-    const user = getUserFromRequest(request)
+    const user = await getUserFromRequest(request)
     if (!user || user.role !== "admin") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 })
     }

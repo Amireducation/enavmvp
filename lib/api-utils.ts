@@ -1,5 +1,5 @@
 interface TokenPayload {
-  sub: string
+  id: string
   email: string
   role: string
   exp: number
@@ -16,7 +16,7 @@ export function getUserFromRequest(request: Request): TokenPayload | null {
     if (token.startsWith("demo-token-")) {
       const role = token.replace("demo-token-", "")
       return {
-        sub: `user-${role}`,
+        id: `user-${role}`,
         email: `${role}@demo.gov.et`,
         role,
         exp: Math.floor(Date.now() / 1000) + 86400,

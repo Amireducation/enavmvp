@@ -40,7 +40,7 @@ export async function POST(request: Request) {
 
     // Generate a simple token (base64 encoded JSON with expiry)
     const tokenPayload = {
-      sub: user.id,
+      id: user.id,
       email: user.email,
       role: user.role,
       exp: Math.floor(Date.now() / 1000) + 86400, // 24 hours
