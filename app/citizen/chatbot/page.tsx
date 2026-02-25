@@ -18,94 +18,7 @@ interface Message {
   language?: string
 }
 
-// Mock AI responses for demo
-const mockResponses: Record<string, string> = {
-  "national id": `To apply for a National ID Card in Ethiopia:
-
-**Requirements:**
-1. Birth Certificate (original)
-2. Two recent passport-size photos
-3. Proof of residence (utility bill or kebele ID)
-
-**Process:**
-1. Visit your local Kebele office
-2. Fill out the application form
-3. Submit required documents
-4. Pay the fee of ETB 150
-5. Receive your ID within 5-7 business days
-
-**Fee:** ETB 150
-
-Would you like help with anything else?`,
-
-  "birth certificate": `To obtain a Birth Certificate:
-
-**Requirements:**
-1. Hospital birth record or delivery certificate
-2. Parents' national IDs
-3. Marriage certificate (if applicable)
-
-**Process:**
-1. Visit the Vital Events Registration Office
-2. Complete the birth registration form
-3. Submit all required documents
-4. Pay the processing fee of ETB 50
-5. Certificate ready in 3-5 business days
-
-**Fee:** ETB 50
-
-Is there anything else you'd like to know?`,
-
-  passport: `For Ethiopian Passport Application:
-
-**Requirements:**
-1. National ID Card
-2. Birth Certificate
-3. Four passport-size photos
-4. Proof of payment
-
-**Process:**
-1. Book an appointment online at immigration.gov.et
-2. Visit the Immigration office on your scheduled date
-3. Submit biometric data and documents
-4. Pay the fee of ETB 1,500
-5. Processing takes 15-30 business days
-
-**Fee:** ETB 1,500
-
-Need more information about any step?`,
-
-  "driver's license": `For Driver's License Application:
-
-**Requirements:**
-1. National ID Card
-2. Medical fitness certificate
-3. Driving test certificate from approved school
-4. Two passport photos
-
-**Process:**
-1. Complete driving school training
-2. Pass written and practical tests
-3. Apply at Transport Authority office
-4. Submit documents and pay fee
-5. License ready in 7-10 business days
-
-**Fee:** ETB 300
-
-Any other questions?`,
-
-  default: `I'd be happy to help you with Ethiopian government services! 
-
-I can provide information about:
-• **National ID Card** - Application and renewal
-• **Birth Certificate** - Registration process
-• **Passport** - Application requirements
-• **Driver's License** - How to obtain one
-• **Business License** - Registration steps
-• **Marriage Certificate** - Documentation needed
-
-What service would you like to know more about?`,
-}
+import { auth } from "@/lib/auth"
 
 function detectLanguage(text: string): string {
   const amharicPattern = /[\u1200-\u137F]/
@@ -116,31 +29,13 @@ function detectLanguage(text: string): string {
   return "English"
 }
 
-function getMockResponse(input: string): string {
-  const lowerInput = input.toLowerCase()
-
-  if (lowerInput.includes("national id") || lowerInput.includes("id card")) {
-    return mockResponses["national id"]
-  }
-  if (lowerInput.includes("birth") || lowerInput.includes("certificate")) {
-    return mockResponses["birth certificate"]
-  }
-  if (lowerInput.includes("passport")) {
-    return mockResponses["passport"]
-  }
-  if (lowerInput.includes("driver") || lowerInput.includes("license")) {
-    return mockResponses["driver's license"]
-  }
-
-  return mockResponses["default"]
-}
-
 function ChatbotContent() {
   const { user } = useAuth()
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState("")
   const [loading, setLoading] = useState(false)
   const [copiedId, setCopiedId] = useState<string | null>(null)
+  const [sessionId, setSessionId] = useState<string | null>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -152,11 +47,12 @@ function ChatbotContent() {
     if (!input.trim() || loading) return
 
     const detectedLang = detectLanguage(input)
+    const messageText = input
 
     const userMessage: Message = {
       id: Date.now().toString(),
       type: "user",
-      content: input,
+      content: messageText,
       timestamp: new Date(),
       language: detectedLang,
     }
@@ -165,19 +61,74 @@ function ChatbotContent() {
     setInput("")
     setLoading(true)
 
-    // Simulate API delay
-    await new Promise((resolve) => setTimeout(resolve, 1000 + Math.random() * 1000))
+    try {
+      // Create a session if we don't have one
+      let currentSession = sessionId
+      if (!currentSession) {
+        const token = auth.getToken()
+        const sessionRes = await fetch("/api/chat/sessions", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+          body: JSON.stringify({ topic: "general" }),
+        })
+        const sessionData = await sessionRes.json()
+        if (sessionData.session?.id) {
+          currentSession = sessionData.session.id
+          setSessionId(currentSession)
+        }
+      }
 
-    const botMessage: Message = {
-      id: (Date.now() + 1).toString(),
-      type: "bot",
-      content: getMockResponse(input),
-      timestamp: new Date(),
-      language: "English",
+      // Build conversation history for context
+      const conversationHistory = messages.map((m) => ({
+        role: m.type === "user" ? "user" : "assistant",
+        content: m.content,
+      }))
+
+      const token = auth.getToken()
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({
+          sessionId: currentSession,
+          message: messageText,
+          conversationHistory,
+        }),
+      })
+
+      const data = await res.json()
+
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to get response")
+      }
+
+      const botMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        type: "bot",
+        content: data.response,
+        timestamp: new Date(),
+        language: "English",
+      }
+
+      setMessages((prev) => [...prev, botMessage])
+    } catch (error) {
+      console.error("Chat error:", error)
+      const errorMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        type: "bot",
+        content: "I apologize, but I encountered an error. Please try again in a moment.",
+        timestamp: new Date(),
+        language: "English",
+      }
+      setMessages((prev) => [...prev, errorMessage])
+    } finally {
+      setLoading(false)
     }
-
-    setMessages((prev) => [...prev, botMessage])
-    setLoading(false)
   }
 
   const handleCopy = (id: string, content: string) => {
