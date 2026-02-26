@@ -4,7 +4,7 @@ import { getUserFromRequest } from "@/lib/api-utils"
 
 export async function POST(request: Request, { params }: { params: { id: string } }) {
   try {
-    const user = getUserFromRequest(request)
+    const user = await getUserFromRequest(request)
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
@@ -30,32 +30,41 @@ export async function POST(request: Request, { params }: { params: { id: string 
       SELECT vote_type FROM service_expansion_votes WHERE expansion_id = ${id} AND user_id = ${user.id}
     `
 
+    const currentVotes = expansions[0]
+
     if (existingVotes.length > 0) {
-      // Update existing vote
       const oldVoteType = existingVotes[0].vote_type
 
       if (oldVoteType === voteType) {
-        // Remove vote
+        // Remove vote (toggle off)
         await sql`
           DELETE FROM service_expansion_votes WHERE expansion_id = ${id} AND user_id = ${user.id}
         `
 
-        const updateField = voteType === "upvote" ? "upvotes" : "downvotes"
-        await sql`
-          UPDATE service_expansion_requests SET ${updateField} = ${updateField} - 1 WHERE id = ${id}
-        `
+        if (voteType === "upvote") {
+          await sql`
+            UPDATE service_expansion_requests SET upvotes = upvotes - 1 WHERE id = ${id}
+          `
+        } else {
+          await sql`
+            UPDATE service_expansion_requests SET downvotes = downvotes - 1 WHERE id = ${id}
+          `
+        }
       } else {
         // Change vote
         await sql`
           UPDATE service_expansion_votes SET vote_type = ${voteType} WHERE expansion_id = ${id} AND user_id = ${user.id}
         `
 
-        const oldField = oldVoteType === "upvote" ? "upvotes" : "downvotes"
-        const newField = voteType === "upvote" ? "upvotes" : "downvotes"
-
-        await sql`
-          UPDATE service_expansion_requests SET ${oldField} = ${oldField} - 1, ${newField} = ${newField} + 1 WHERE id = ${id}
-        `
+        if (oldVoteType === "upvote" && voteType === "downvote") {
+          await sql`
+            UPDATE service_expansion_requests SET upvotes = upvotes - 1, downvotes = downvotes + 1 WHERE id = ${id}
+          `
+        } else {
+          await sql`
+            UPDATE service_expansion_requests SET upvotes = upvotes + 1, downvotes = downvotes - 1 WHERE id = ${id}
+          `
+        }
       }
     } else {
       // Add new vote
@@ -64,10 +73,15 @@ export async function POST(request: Request, { params }: { params: { id: string 
         VALUES (${id}, ${user.id}, ${voteType})
       `
 
-      const field = voteType === "upvote" ? "upvotes" : "downvotes"
-      await sql`
-        UPDATE service_expansion_requests SET ${field} = ${field} + 1 WHERE id = ${id}
-      `
+      if (voteType === "upvote") {
+        await sql`
+          UPDATE service_expansion_requests SET upvotes = upvotes + 1 WHERE id = ${id}
+        `
+      } else {
+        await sql`
+          UPDATE service_expansion_requests SET downvotes = downvotes + 1 WHERE id = ${id}
+        `
+      }
     }
 
     const updated = await sql`
