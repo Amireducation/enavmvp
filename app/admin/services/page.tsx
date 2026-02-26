@@ -229,7 +229,7 @@ function ServiceManagementContent() {
                     </div>
                     <div className="flex items-center gap-2 text-sm text-slate-300">
                       <DollarSign className="w-4 h-4 text-green-400" />
-                      <span>ETB {service.service_fee.toFixed(2)}</span>
+                      <span>ETB {Number(service.service_fee).toFixed(2)}</span>
                     </div>
                   </div>
                   <div className="flex gap-2">
