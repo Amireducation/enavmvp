@@ -12,8 +12,8 @@ SELECT
   COUNT(CASE WHEN sr.status = 'approved' THEN 1 END) as approved_count,
   COUNT(CASE WHEN sr.status = 'rejected' THEN 1 END) as rejected_count,
   COUNT(CASE WHEN sr.status = 'pending' THEN 1 END) as pending_count,
-  ROUND(100.0 * COUNT(CASE WHEN sr.status = 'approved' THEN 1 END) / NULLIF(COUNT(sr.id), 0), 2) as approval_rate,
-  ROUND(AVG(CAST(sf.rating as FLOAT)), 2) as average_rating,
+  ROUND(100.0 * COUNT(CASE WHEN sr.status = 'approved' THEN 1 END) / NULLIF(COUNT(sr.id), 0)::NUMERIC, 2) as approval_rate,
+  ROUND(AVG(CAST(sf.rating as NUMERIC)), 2) as average_rating,
   COUNT(DISTINCT sf.id) as total_reviews,
   ROUND(AVG(EXTRACT(DAY FROM sr.updated_at - sr.created_at))::NUMERIC, 1) as avg_processing_days,
   MAX(sr.created_at) as last_application_date,
@@ -21,7 +21,7 @@ SELECT
 FROM services s
 LEFT JOIN service_categories sc ON s.category_id = sc.id
 LEFT JOIN service_requests sr ON s.id = sr.service_id
-LEFT JOIN service_feedback sf ON s.id = sf.service_id
+LEFT JOIN feedback sf ON s.id = sf.service_id
 WHERE s.status = 'active'
 GROUP BY s.id, s.name, s.category_id, sc.name;
 
@@ -36,7 +36,7 @@ SELECT
   COUNT(DISTINCT u.id) as new_users,
   COUNT(DISTINCT CASE WHEN sr.id IS NOT NULL THEN u.id END) as active_users,
   COUNT(DISTINCT sr.id) as total_applications_by_cohort,
-  ROUND(100.0 * COUNT(DISTINCT CASE WHEN sr.id IS NOT NULL THEN u.id END) / NULLIF(COUNT(DISTINCT u.id), 0), 2) as activation_rate,
+  ROUND(100.0 * COUNT(DISTINCT CASE WHEN sr.id IS NOT NULL THEN u.id END) / NULLIF(COUNT(DISTINCT u.id), 0)::NUMERIC, 2) as activation_rate,
   ROUND(AVG(CASE WHEN sr.id IS NOT NULL THEN 1 ELSE 0 END)::NUMERIC, 2) as avg_applications_per_user,
   MAX(CASE WHEN sr.created_at IS NOT NULL THEN sr.created_at ELSE u.created_at END) as last_activity,
   NOW() as view_last_updated
@@ -55,10 +55,10 @@ SELECT
   sr.status,
   COUNT(*) as count,
   COUNT(DISTINCT sr.user_id) as unique_users,
-  ROUND(AVG(CAST(sf.rating as FLOAT)), 2) as avg_daily_rating,
+  ROUND(AVG(CAST(sf.rating as NUMERIC)), 2) as avg_daily_rating,
   NOW() as view_last_updated
 FROM service_requests sr
-LEFT JOIN service_feedback sf ON sr.id = sf.service_request_id
+LEFT JOIN feedback sf ON sr.id = sf.service_request_id
 GROUP BY 
   DATE_TRUNC('day', sr.created_at),
   DATE_TRUNC('week', sr.created_at),
@@ -78,15 +78,15 @@ SELECT
   sc.name as category_name,
   COUNT(DISTINCT s.id) as service_count,
   COUNT(sr.id) as total_applications,
-  ROUND(100.0 * COUNT(CASE WHEN sr.status = 'approved' THEN 1 END) / NULLIF(COUNT(sr.id), 0), 2) as category_approval_rate,
-  ROUND(AVG(CAST(sf.rating as FLOAT)), 2) as category_avg_rating,
+  ROUND(100.0 * COUNT(CASE WHEN sr.status = 'approved' THEN 1 END) / NULLIF(COUNT(sr.id), 0)::NUMERIC, 2) as category_approval_rate,
+  ROUND(AVG(CAST(sf.rating as NUMERIC)), 2) as category_avg_rating,
   COUNT(DISTINCT sr.user_id) as unique_users,
   MAX(sr.created_at) as last_application_in_category,
   NOW() as view_last_updated
 FROM service_categories sc
 LEFT JOIN services s ON sc.id = s.category_id AND s.status = 'active'
 LEFT JOIN service_requests sr ON s.id = sr.service_id
-LEFT JOIN service_feedback sf ON s.id = sf.service_id
+LEFT JOIN feedback sf ON s.id = sf.service_id
 GROUP BY sc.id, sc.name
 ORDER BY total_applications DESC;
 
@@ -101,7 +101,7 @@ SELECT
   COUNT(DISTINCT sr.service_id) as unique_services_accessed,
   MAX(sr.created_at) as last_application_date,
   COUNT(sf.id) as feedback_submissions,
-  ROUND(AVG(CAST(sf.rating as FLOAT)), 2) as user_avg_rating,
+  ROUND(AVG(CAST(sf.rating as NUMERIC)), 2) as user_avg_rating,
   CASE 
     WHEN MAX(sr.created_at) >= CURRENT_DATE - INTERVAL '7 days' THEN 'Very Active'
     WHEN MAX(sr.created_at) >= CURRENT_DATE - INTERVAL '30 days' THEN 'Active'
@@ -111,7 +111,7 @@ SELECT
   NOW() as view_last_updated
 FROM users u
 LEFT JOIN service_requests sr ON u.id = sr.user_id
-LEFT JOIN service_feedback sf ON u.id = sf.user_id
+LEFT JOIN feedback sf ON u.id = sf.user_id
 WHERE u.role = 'citizen'
 GROUP BY u.id, u.email, u.full_name, u.created_at;
 
@@ -127,9 +127,9 @@ SELECT
   COUNT(*) as feedback_count,
   COUNT(DISTINCT sf.user_id) as unique_reviewers,
   COUNT(DISTINCT sf.service_id) as unique_services_reviewed,
-  ROUND(100.0 * COUNT(*) / SUM(COUNT(*)) OVER (PARTITION BY DATE_TRUNC('day', sf.created_at))::FLOAT, 2) as percentage_of_daily_feedback,
+  ROUND(100.0 * COUNT(*) / SUM(COUNT(*)) OVER (PARTITION BY DATE_TRUNC('day', sf.created_at))::NUMERIC, 2) as percentage_of_daily_feedback,
   NOW() as view_last_updated
-FROM service_feedback sf
+FROM feedback sf
 GROUP BY DATE_TRUNC('day', sf.created_at), sf.rating
 ORDER BY feedback_date DESC, rating DESC;
 
