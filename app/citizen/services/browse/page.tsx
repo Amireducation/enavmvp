@@ -1,28 +1,31 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Search, Filter, Grid3x3, List, ArrowLeft, DollarSign, Clock } from "lucide-react"
+import { Search, Filter, Grid3x3, List, ArrowLeft, DollarSign, Clock, Eye } from "lucide-react"
 import { ProtectedRoute } from "@/components/protected-route"
-import { ServiceCard } from "@/components/service-card"
-import { ApplicationModal } from "@/components/application-modal"
 import { apiClient } from "@/lib/api-client"
 import Link from "next/link"
 
 interface Service {
-  service_id: string
+  id: string
+  service_id?: string
   name: string
   category: string
   description: string
-  estimated_processing_time: string
+  estimated_processing_time?: string
+  estimated_processing_days?: number
   service_fee: number
+  online_available?: boolean
 }
 
 function ServiceBrowseContent() {
+  const router = useRouter()
   const [services, setServices] = useState<Service[]>([])
   const [categories, setCategories] = useState<string[]>([])
   const [loading, setLoading] = useState(true)
@@ -31,8 +34,6 @@ function ServiceBrowseContent() {
   const [minFee, setMinFee] = useState("")
   const [maxFee, setMaxFee] = useState("")
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid")
-  const [selectedService, setSelectedService] = useState<Service | null>(null)
-  const [isModalOpen, setIsModalOpen] = useState(false)
 
   useEffect(() => {
     fetchData()
@@ -55,9 +56,8 @@ function ServiceBrowseContent() {
     }
   }
 
-  const handleApplyClick = (service: Service) => {
-    setSelectedService(service)
-    setIsModalOpen(true)
+  const handleApplyClick = (serviceId: string) => {
+    router.push(`/citizen/services/${serviceId}`)
   }
 
   const handleSearch = async () => {
@@ -189,18 +189,29 @@ function ServiceBrowseContent() {
               <div className={viewMode === "grid" ? "grid md:grid-cols-2 lg:grid-cols-3 gap-6" : "space-y-3"}>
                 {services.map((service) =>
                   viewMode === "grid" ? (
-                    <ServiceCard
-                      key={service.service_id}
-                      serviceId={service.service_id}
-                      name={service.name}
-                      category={service.category}
-                      description={service.description}
-                      processingTime={service.estimated_processing_time}
-                      fee={service.service_fee}
-                      onApply={handleApplyClick}
-                    />
+                    <Card key={service.id || service.service_id} className="bg-slate-800 border-slate-700 p-6 hover:border-amber-500/50 transition-colors cursor-pointer" onClick={() => handleApplyClick(service.id || service.service_id || '')}>
+                      <div className="flex items-start justify-between mb-3">
+                        <Badge className="bg-amber-500/20 text-amber-200">{service.category}</Badge>
+                        <Eye className="w-4 h-4 text-slate-500" />
+                      </div>
+                      <h3 className="text-lg font-bold text-white mb-2">{service.name}</h3>
+                      <p className="text-slate-400 text-sm mb-4 line-clamp-2">{service.description}</p>
+                      <div className="flex gap-3 text-sm mb-4 border-t border-slate-700 pt-4">
+                        <span className="text-slate-300 flex items-center gap-1">
+                          <Clock className="w-4 h-4 text-blue-400" />
+                          {service.estimated_processing_days || 'N/A'} days
+                        </span>
+                        <span className="text-slate-300 flex items-center gap-1">
+                          <DollarSign className="w-4 h-4 text-green-400" />
+                          ETB {Number(service.service_fee).toFixed(2)}
+                        </span>
+                      </div>
+                      <Button className="w-full bg-amber-500 hover:bg-amber-600 text-slate-900">
+                        View Details
+                      </Button>
+                    </Card>
                   ) : (
-                    <Card key={service.service_id} className="bg-slate-800 border-slate-700 p-4">
+                    <Card key={service.id || service.service_id} className="bg-slate-800 border-slate-700 p-4 hover:border-amber-500/50 transition-colors cursor-pointer" onClick={() => handleApplyClick(service.id || service.service_id || '')}>
                       <div className="flex items-center justify-between">
                         <div className="flex-1">
                           <div className="flex items-center gap-3 mb-2">
@@ -211,19 +222,22 @@ function ServiceBrowseContent() {
                           <div className="flex gap-4 text-sm">
                             <span className="text-slate-300 flex items-center gap-1">
                               <Clock className="w-4 h-4 text-blue-400" />
-                              {service.estimated_processing_time}
+                              {service.estimated_processing_days || 'N/A'} days
                             </span>
                             <span className="text-slate-300 flex items-center gap-1">
                               <DollarSign className="w-4 h-4 text-green-400" />
-                              ETB {service.service_fee.toFixed(2)}
+                              ETB {Number(service.service_fee).toFixed(2)}
                             </span>
                           </div>
                         </div>
                         <Button
-                          onClick={() => handleApplyClick(service)}
-                          className="bg-amber-500 hover:bg-amber-600 text-slate-900 ml-4"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            handleApplyClick(service.id || service.service_id || '')
+                          }}
+                          className="bg-amber-500 hover:bg-amber-600 text-slate-900 ml-4 flex-shrink-0"
                         >
-                          Apply Now
+                          <Eye className="w-4 h-4" />
                         </Button>
                       </div>
                     </Card>
@@ -234,17 +248,6 @@ function ServiceBrowseContent() {
           </TabsContent>
         </Tabs>
       </div>
-
-      <ApplicationModal
-        isOpen={isModalOpen}
-        serviceId={selectedService?.service_id || ""}
-        serviceName={selectedService?.name || ""}
-        onClose={() => {
-          setIsModalOpen(false)
-          setSelectedService(null)
-        }}
-        onSuccess={fetchData}
-      />
     </div>
   )
 }
