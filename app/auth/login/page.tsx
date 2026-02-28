@@ -44,6 +44,20 @@ export default function LoginPage() {
     setError("")
     setLoading(true)
 
+    // Client-side validation
+    if (!email || !password) {
+      setError("Email and password are required")
+      setLoading(false)
+      return
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(email)) {
+      setError("Please enter a valid email address")
+      setLoading(false)
+      return
+    }
+
     try {
       const res = await fetch("/api/auth/login", {
         method: "POST",
@@ -51,13 +65,30 @@ export default function LoginPage() {
         body: JSON.stringify({ email, password }),
       })
 
-      const data = await res.json()
+      const response = await res.json()
 
       if (!res.ok) {
-        setError(data.error || "Login failed. Please check your credentials.")
+        const errorMessage = response.error?.message || response.error || "Login failed. Please check your credentials."
+        setError(errorMessage)
         setLoading(false)
         return
       }
+
+      // Handle new standardized response format
+      const userData = response.data || response
+      if (userData.token && userData.user) {
+        authLib.setToken(userData.token)
+        authLib.setUser(userData.user)
+        setUser(userData.user)
+        router.push(`/${userData.user.role}/dashboard`)
+      }
+    } catch (err) {
+      setError("An error occurred during login. Please try again.")
+      console.error("Login error:", err)
+    } finally {
+      setLoading(false)
+    }
+  }
 
       // Store token and user
       authLib.setToken(data.token)

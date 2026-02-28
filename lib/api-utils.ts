@@ -1,8 +1,100 @@
+import { NextResponse } from "next/server"
+
 interface TokenPayload {
   id: string
   email: string
   role: string
   exp: number
+}
+
+// API Response envelope types
+interface ApiSuccessResponse<T> {
+  success: true
+  data: T
+  meta?: {
+    page?: number
+    pageSize?: number
+    total?: number
+    timestamp?: string
+  }
+}
+
+interface ApiErrorResponse {
+  success: false
+  error: {
+    code: string
+    message: string
+    details?: Record<string, unknown>
+  }
+  meta?: {
+    timestamp?: string
+    requestId?: string
+  }
+}
+
+type ApiResponse<T> = ApiSuccessResponse<T> | ApiErrorResponse
+
+/**
+ * Create a standardized success response
+ */
+export function successResponse<T>(
+  data: T,
+  meta?: { page?: number; pageSize?: number; total?: number }
+): NextResponse<ApiSuccessResponse<T>> {
+  return NextResponse.json({
+    success: true,
+    data,
+    meta: {
+      ...meta,
+      timestamp: new Date().toISOString(),
+    },
+  })
+}
+
+/**
+ * Create a standardized error response
+ */
+export function errorResponse(
+  code: string,
+  message: string,
+  status: number = 400,
+  details?: Record<string, unknown>
+): NextResponse<ApiErrorResponse> {
+  return NextResponse.json(
+    {
+      success: false,
+      error: {
+        code,
+        message,
+        ...(details && { details }),
+      },
+      meta: {
+        timestamp: new Date().toISOString(),
+      },
+    },
+    { status }
+  )
+}
+
+/**
+ * Create a paginated response
+ */
+export function paginatedResponse<T>(
+  data: T[],
+  page: number,
+  pageSize: number,
+  total: number
+): NextResponse<ApiSuccessResponse<T[]>> {
+  return NextResponse.json({
+    success: true,
+    data,
+    meta: {
+      page,
+      pageSize,
+      total,
+      timestamp: new Date().toISOString(),
+    },
+  })
 }
 
 export function getUserFromRequest(request: Request): TokenPayload | null {
