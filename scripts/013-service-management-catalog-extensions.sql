@@ -303,7 +303,7 @@ SELECT
   s.name_am,
   s.name_or,
   s.description,
-  s.category,
+    sc.name as category,
   st.core_type,
   st.type,
   st.subtype,
@@ -322,7 +322,7 @@ LEFT JOIN service_variations sv ON s.id = sv.service_id AND sv.is_available = TR
 LEFT JOIN eligibility_rules er ON s.id = er.service_id AND er.is_active = TRUE
 LEFT JOIN service_requests sr ON s.id = sr.service_id AND sr.created_at > NOW() - INTERVAL '30 days'
 WHERE s.status = 'active'
-GROUP BY s.id, s.name, s.name_am, s.name_or, s.description, s.category, st.core_type, st.type, st.subtype, s.sector, s.service_fee, s.estimated_processing_days, s.online_available, sc.name;
+  GROUP BY s.id, s.name, s.name_am, s.name_or, s.description, sc.name, st.core_type, st.type, st.subtype, s.sector, s.service_fee, s.estimated_processing_days, s.online_available;
 
-CREATE INDEX idx_v_service_catalog_sector ON v_service_catalog(sector);
-CREATE INDEX idx_v_service_catalog_core_type ON v_service_catalog(core_type);
+-- Note: Indexes cannot be created on materialized views, only on tables
+-- The v_service_catalog view provides fast discovery queries via table indexes
