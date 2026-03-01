@@ -43,13 +43,12 @@ function ServiceBrowseContent() {
     try {
       setLoading(true)
       const [servicesRes, categoriesRes] = await Promise.all([
-        apiClient.get<Service[]>("/services"),
-        apiClient.get<string[]>("/services/categories"),
+        apiClient.get<{ services: Service[] }>("/services"),
+        apiClient.get<{ categories: string[] }>("/services/categories"),
       ])
 
-      // Handle both old format (services/categories) and new format (data array)
-      setServices(Array.isArray(servicesRes) ? servicesRes : (servicesRes as any).services || [])
-      setCategories(Array.isArray(categoriesRes) ? categoriesRes : (categoriesRes as any).categories || [])
+      setServices(servicesRes.services || [])
+      setCategories(categoriesRes.categories || [])
     } catch (err) {
       console.error("Failed to fetch data:", err)
     } finally {
@@ -70,8 +69,8 @@ function ServiceBrowseContent() {
       if (minFee) params.append("minFee", minFee)
       if (maxFee) params.append("maxFee", maxFee)
 
-      const res = await apiClient.get<Service[]>(`/services?${params.toString()}`)
-      setServices(Array.isArray(res) ? res : (res as any).services || [])
+      const res = await apiClient.get<{ services: Service[] }>(`/services?${params.toString()}`)
+      setServices(res.services || [])
     } catch (err) {
       console.error("Failed to search services:", err)
     } finally {

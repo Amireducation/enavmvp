@@ -70,14 +70,13 @@ function CitizenPortalContent() {
     async function fetchData() {
       try {
         const [svcData, appData, notifData] = await Promise.all([
-          apiClient.get<Service[]>("/services"),
-          apiClient.get<Application[]>("/applications").catch(() => []),
-          apiClient.get<Notification[]>("/notifications").catch(() => []),
+          apiClient.get<{ services: Service[] }>("/services"),
+          apiClient.get<{ applications: Application[] }>("/applications").catch(() => ({ applications: [] })),
+          apiClient.get<{ notifications: Notification[] }>("/notifications").catch(() => ({ notifications: [] })),
         ])
-        // Handle both old format (services/applications/notifications) and new format (data array)
-        setServices(Array.isArray(svcData) ? svcData : (svcData as any).services || [])
-        setApplications(Array.isArray(appData) ? appData : (appData as any).applications || [])
-        setNotifications(Array.isArray(notifData) ? notifData : (notifData as any).notifications || [])
+        setServices(svcData.services || [])
+        setApplications(appData.applications || [])
+        setNotifications(notifData.notifications || [])
       } catch (err) {
         console.error("Failed to fetch data:", err)
       } finally {
