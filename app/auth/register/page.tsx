@@ -32,13 +32,31 @@ export default function RegisterPage() {
     setError("")
     setSuccess("")
 
-    if (formData.password !== formData.confirmPassword) {
-      setError("Passwords do not match")
+    // Client-side validation
+    if (!formData.fullName || formData.fullName.length < 2) {
+      setError("Full name must be at least 2 characters")
       return
     }
 
-    if (formData.password.length < 6) {
-      setError("Password must be at least 6 characters")
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(formData.email)) {
+      setError("Please enter a valid email address")
+      return
+    }
+
+    if (formData.password.length < 8) {
+      setError("Password must be at least 8 characters")
+      return
+    }
+
+    const passwordRegex = /^(?=.*[A-Z])(?=.*\d)/
+    if (!passwordRegex.test(formData.password)) {
+      setError("Password must contain at least one uppercase letter and one number")
+      return
+    }
+
+    if (formData.password !== formData.confirmPassword) {
+      setError("Passwords do not match")
       return
     }
 
@@ -52,14 +70,16 @@ export default function RegisterPage() {
           fullName: formData.fullName,
           email: formData.email,
           password: formData.password,
+          confirmPassword: formData.confirmPassword,
           role: formData.role,
         }),
       })
 
-      const data = await res.json()
+      const response = await res.json()
 
       if (!res.ok) {
-        setError(data.error || "Registration failed. Please try again.")
+        const errorMessage = response.error?.message || response.error || "Registration failed. Please try again."
+        setError(errorMessage)
         setLoading(false)
         return
       }
