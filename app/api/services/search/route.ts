@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import { sql } from "@/lib/db"
+import { successResponse, errorResponse, paginatedResponse } from "@/lib/api-utils"
 
 interface SearchResult {
   service_id: string
@@ -52,7 +53,7 @@ export async function GET(request: Request) {
     const offset = parseInt(searchParams.get("offset") || "0")
 
     if (!query && !category) {
-      return NextResponse.json({ error: "Query or category parameter required" }, { status: 400 })
+      return errorResponse("MISSING_PARAMS", "Query or category parameter required", 400)
     }
 
     // Build dynamic query with relevance scoring
@@ -127,17 +128,11 @@ export async function GET(request: Request) {
       ${whereClause}
     `
 
-    return NextResponse.json({
-      results: formattedResults,
-      pagination: {
-        total: Number(countResult[0].total),
-        limit,
-        offset,
-        hasMore: offset + limit < Number(countResult[0].total),
-      },
-    })
+    const total = Number(countResult[0].total)
+    const page = Math.floor(offset / limit) + 1
+    return paginatedResponse(formattedResults, page, limit, total)
   } catch (error) {
     console.error("Search error:", error)
-    return NextResponse.json({ error: "Search failed" }, { status: 500 })
+    return errorResponse("SEARCH_ERROR", "Search failed", 500)
   }
 }

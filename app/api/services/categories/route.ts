@@ -1,17 +1,18 @@
 import { NextResponse } from "next/server"
 import { sql } from "@/lib/db"
+import { successResponse, errorResponse } from "@/lib/api-utils"
 
 export async function GET() {
   try {
     const result = await sql`
-      SELECT name FROM service_categories
+      SELECT id, name, name_am, name_or, icon, description, sort_order
+      FROM service_categories
       WHERE is_active = TRUE
       ORDER BY sort_order
     `
-    const categories = result.map((r) => r.name)
-    return NextResponse.json({ categories })
+    return successResponse(result)
   } catch (error) {
     console.error("Categories fetch error:", error)
-    return NextResponse.json({ error: "Failed to fetch categories" }, { status: 500 })
+    return errorResponse("CATEGORIES_FETCH_ERROR", "Failed to fetch categories", 500)
   }
 }

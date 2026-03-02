@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import { sql } from "@/lib/db"
-import { getUserFromRequest } from "@/lib/api-utils"
+import { getUserFromRequest, successResponse, errorResponse, paginatedResponse, requireAuth } from "@/lib/api-utils"
 
 function generateTrackingNumber() {
   const year = new Date().getFullYear()
@@ -10,28 +10,36 @@ function generateTrackingNumber() {
 
 export async function GET(request: Request) {
   try {
-    const user = getUserFromRequest(request)
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-    }
+    const user = requireAuth(request)
+    const url = new URL(request.url)
+    const page = parseInt(url.searchParams.get("page") || "1")
+    const limit = Math.min(parseInt(url.searchParams.get("limit") || "20"), 100)
+    const offset = (page - 1) * limit
 
     let applications
+    let total = 0
 
     if (user.role === "citizen") {
+      const countResult = await sql`SELECT COUNT(*) as total FROM service_requests WHERE user_id = ${user.id}`
+      total = parseInt(countResult[0].total)
+
       applications = await sql`
-        SELECT sr.id as application_id, sr.tracking_number, sr.status, sr.priority,
+        SELECT sr.id, sr.tracking_number, sr.status, sr.priority,
           sr.form_data as submitted_data, sr.reviewer_notes as notes,
           sr.created_at, sr.updated_at, sr.completed_at,
           s.id as service_id, s.name as service_name
         FROM service_requests sr
         JOIN services s ON sr.service_id = s.id
-        WHERE sr.user_id = ${user.sub}
+        WHERE sr.user_id = ${user.id}
         ORDER BY sr.created_at DESC
+        LIMIT ${limit} OFFSET ${offset}
       `
     } else {
-      // Employees and admins see all or assigned
+      const countResult = await sql`SELECT COUNT(*) as total FROM service_requests`
+      total = parseInt(countResult[0].total)
+
       applications = await sql`
-        SELECT sr.id as application_id, sr.tracking_number, sr.status, sr.priority,
+        SELECT sr.id, sr.tracking_number, sr.status, sr.priority,
           sr.form_data as submitted_data, sr.reviewer_notes as notes,
           sr.created_at, sr.updated_at, sr.completed_at,
           s.id as service_id, s.name as service_name,
@@ -40,51 +48,53 @@ export async function GET(request: Request) {
         JOIN services s ON sr.service_id = s.id
         JOIN users u ON sr.user_id = u.id
         ORDER BY sr.created_at DESC
-        LIMIT 100
+        LIMIT ${limit} OFFSET ${offset}
       `
     }
 
-    return NextResponse.json({ applications })
-  } catch (error) {
+    return paginatedResponse(applications, page, limit, total)
+  } catch (error: any) {
     console.error("Applications fetch error:", error)
-    return NextResponse.json({ error: "Failed to fetch applications" }, { status: 500 })
+    if (error.message === "Unauthorized") {
+      return errorResponse("UNAUTHORIZED", "Authentication required", 401)
+    }
+    return errorResponse("APPLICATIONS_FETCH_ERROR", "Failed to fetch applications", 500)
   }
 }
 
 export async function POST(request: Request) {
   try {
-    const user = getUserFromRequest(request)
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-    }
-
+    const user = requireAuth(request)
     const body = await request.json()
     const { service_id, submitted_data } = body
 
     if (!service_id) {
-      return NextResponse.json({ error: "Service ID is required" }, { status: 400 })
+      return errorResponse("MISSING_SERVICE_ID", "Service ID is required", 400)
     }
 
     const trackingNumber = generateTrackingNumber()
 
     const application = await sql`
       INSERT INTO service_requests (tracking_number, user_id, service_id, form_data, status)
-      VALUES (${trackingNumber}, ${user.sub}, ${service_id}, ${JSON.stringify(submitted_data || {})}, 'submitted')
-      RETURNING id as application_id, tracking_number, status, created_at
+      VALUES (${trackingNumber}, ${user.id}, ${service_id}, ${JSON.stringify(submitted_data || {})}, 'submitted')
+      RETURNING id, tracking_number, status, created_at
     `
 
     // Create notification for the user
     await sql`
       INSERT INTO notifications (user_id, title, message, type, reference_type, reference_id)
-      VALUES (${user.sub}, 'Application Submitted', ${'Your application ' + trackingNumber + ' has been submitted successfully. You can track its progress from your dashboard.'}, 'success', 'service_request', ${application[0].application_id})
+      VALUES (${user.id}, 'Application Submitted', ${'Your application ' + trackingNumber + ' has been submitted successfully. You can track its progress from your dashboard.'}, 'success', 'service_request', ${application[0].id})
     `
 
-    return NextResponse.json({
+    return successResponse({
       application: application[0],
       message: `Application submitted successfully. Tracking number: ${trackingNumber}`,
-    }, { status: 201 })
-  } catch (error) {
+    })
+  } catch (error: any) {
     console.error("Application creation error:", error)
-    return NextResponse.json({ error: "Failed to submit application" }, { status: 500 })
+    if (error.message === "Unauthorized") {
+      return errorResponse("UNAUTHORIZED", "Authentication required", 401)
+    }
+    return errorResponse("APPLICATION_CREATE_ERROR", "Failed to submit application", 500)
   }
 }
