@@ -320,45 +320,194 @@ INSERT INTO business_sectors (code, name, name_am, icon, sort_order) VALUES
 ON CONFLICT (code) DO NOTHING;
 
 -- ============================================================================
--- UPDATE SERVICES TABLE: Add G2B-specific columns
+-- ALTER SERVICES TABLE: Add G2B-specific columns
 -- ============================================================================
 
-ALTER TABLE services ADD COLUMN IF NOT EXISTS service_code VARCHAR(50);
-ALTER TABLE services ADD COLUMN IF NOT EXISTS target_audience VARCHAR(50) DEFAULT 'citizen'; -- 'citizen', 'business', 'both'
-ALTER TABLE services ADD COLUMN IF NOT EXISTS sector_id UUID REFERENCES business_sectors(id);
-ALTER TABLE services ADD COLUMN IF NOT EXISTS entity_types_allowed UUID[];  -- Array of allowed business entity types
-ALTER TABLE services ADD COLUMN IF NOT EXISTS min_processing_days INT;
-ALTER TABLE services ADD COLUMN IF NOT EXISTS max_processing_days INT;
-ALTER TABLE services ADD COLUMN IF NOT EXISTS is_renewable BOOLEAN DEFAULT FALSE;
-ALTER TABLE services ADD COLUMN IF NOT EXISTS renewal_period_months INT;
-ALTER TABLE services ADD COLUMN IF NOT EXISTS validity_period_months INT;
-ALTER TABLE services ADD COLUMN IF NOT EXISTS application_deadline DATE;
-ALTER TABLE services ADD COLUMN IF NOT EXISTS quota_limit INT;
-ALTER TABLE services ADD COLUMN IF NOT EXISTS current_applications INT DEFAULT 0;
-ALTER TABLE services ADD COLUMN IF NOT EXISTS form_schema_json JSONB;  -- Dynamic form definition
+DO $$
+BEGIN
+  -- Add service_code if it doesn't exist
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'services' AND column_name = 'service_code') THEN
+    ALTER TABLE services ADD COLUMN service_code VARCHAR(50);
+  END IF;
+  
+  -- Add sector_id column
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'services' AND column_name = 'sector_id') THEN
+    ALTER TABLE services ADD COLUMN sector_id UUID;
+  END IF;
+  
+  -- Add target_audience
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'services' AND column_name = 'target_audience') THEN
+    ALTER TABLE services ADD COLUMN target_audience VARCHAR(50) DEFAULT 'citizen';
+  END IF;
+  
+  -- Add min_processing_days
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'services' AND column_name = 'min_processing_days') THEN
+    ALTER TABLE services ADD COLUMN min_processing_days INT;
+  END IF;
+  
+  -- Add max_processing_days
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'services' AND column_name = 'max_processing_days') THEN
+    ALTER TABLE services ADD COLUMN max_processing_days INT;
+  END IF;
+  
+  -- Add is_renewable
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'services' AND column_name = 'is_renewable') THEN
+    ALTER TABLE services ADD COLUMN is_renewable BOOLEAN DEFAULT FALSE;
+  END IF;
+  
+  -- Add renewal_period_months
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'services' AND column_name = 'renewal_period_months') THEN
+    ALTER TABLE services ADD COLUMN renewal_period_months INT;
+  END IF;
+  
+  -- Add validity_period_months
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'services' AND column_name = 'validity_period_months') THEN
+    ALTER TABLE services ADD COLUMN validity_period_months INT;
+  END IF;
+  
+  -- Add required_entity_types
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'services' AND column_name = 'required_entity_types') THEN
+    ALTER TABLE services ADD COLUMN required_entity_types JSONB;
+  END IF;
+  
+  -- Add allowed_sectors
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'services' AND column_name = 'allowed_sectors') THEN
+    ALTER TABLE services ADD COLUMN allowed_sectors JSONB;
+  END IF;
+  
+  -- Add ministry_id
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'services' AND column_name = 'ministry_id') THEN
+    ALTER TABLE services ADD COLUMN ministry_id UUID;
+  END IF;
+  
+  -- Add department
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'services' AND column_name = 'department') THEN
+    ALTER TABLE services ADD COLUMN department VARCHAR(200);
+  END IF;
+  
+  -- Add legal_basis
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'services' AND column_name = 'legal_basis') THEN
+    ALTER TABLE services ADD COLUMN legal_basis TEXT;
+  END IF;
+  
+  -- Add legal_basis_am
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'services' AND column_name = 'legal_basis_am') THEN
+    ALTER TABLE services ADD COLUMN legal_basis_am TEXT;
+  END IF;
+END $$;
+
+-- Add foreign key constraint for sector_id after business_sectors table exists
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.table_constraints 
+    WHERE constraint_name = 'services_sector_id_fkey' AND table_name = 'services'
+  ) THEN
+    ALTER TABLE services ADD CONSTRAINT services_sector_id_fkey FOREIGN KEY (sector_id) REFERENCES business_sectors(id);
+  END IF;
+EXCEPTION WHEN others THEN
+  -- Ignore if constraint already exists or table doesn't exist yet
+  NULL;
+END $$;
 
 CREATE INDEX IF NOT EXISTS idx_services_code ON services(service_code);
+CREATE INDEX IF NOT EXISTS idx_services_sector ON services(sector_id);
 CREATE INDEX IF NOT EXISTS idx_services_audience ON services(target_audience);
 CREATE INDEX IF NOT EXISTS idx_services_sector ON services(sector_id);
 
 -- ============================================================================
--- UPDATE SERVICE REQUESTS TABLE: Add G2B-specific columns
+-- ALTER SERVICE_REQUESTS TABLE: Add G2B-specific columns
 -- ============================================================================
 
-ALTER TABLE service_requests ADD COLUMN IF NOT EXISTS business_profile_id UUID REFERENCES business_profiles(id);
-ALTER TABLE service_requests ADD COLUMN IF NOT EXISTS application_type VARCHAR(50) DEFAULT 'new'; -- 'new', 'renewal', 'amendment', 'cancellation'
-ALTER TABLE service_requests ADD COLUMN IF NOT EXISTS urgency_level VARCHAR(50) DEFAULT 'normal'; -- 'normal', 'urgent', 'emergency'
-ALTER TABLE service_requests ADD COLUMN IF NOT EXISTS estimated_completion_date TIMESTAMP;
-ALTER TABLE service_requests ADD COLUMN IF NOT EXISTS actual_completion_date TIMESTAMP;
-ALTER TABLE service_requests ADD COLUMN IF NOT EXISTS total_fees DECIMAL(15,2);
-ALTER TABLE service_requests ADD COLUMN IF NOT EXISTS paid_amount DECIMAL(15,2) DEFAULT 0;
-ALTER TABLE service_requests ADD COLUMN IF NOT EXISTS payment_status VARCHAR(50) DEFAULT 'unpaid'; -- 'unpaid', 'partial', 'paid', 'refunded'
-ALTER TABLE service_requests ADD COLUMN IF NOT EXISTS rejection_reason TEXT;
-ALTER TABLE service_requests ADD COLUMN IF NOT EXISTS rejection_reason_am TEXT;
-ALTER TABLE service_requests ADD COLUMN IF NOT EXISTS can_resubmit BOOLEAN DEFAULT TRUE;
-ALTER TABLE service_requests ADD COLUMN IF NOT EXISTS resubmission_deadline TIMESTAMP;
-ALTER TABLE service_requests ADD COLUMN IF NOT EXISTS parent_request_id UUID REFERENCES service_requests(id); -- For renewals/amendments
-ALTER TABLE service_requests ADD COLUMN IF NOT EXISTS issued_document_id UUID;
+DO $$
+BEGIN
+  -- Add business_profile_id
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'service_requests' AND column_name = 'business_profile_id') THEN
+    ALTER TABLE service_requests ADD COLUMN business_profile_id UUID;
+  END IF;
+  
+  -- Add request_type
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'service_requests' AND column_name = 'request_type') THEN
+    ALTER TABLE service_requests ADD COLUMN request_type VARCHAR(50) DEFAULT 'new';
+  END IF;
+  
+  -- Add urgency_level
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'service_requests' AND column_name = 'urgency_level') THEN
+    ALTER TABLE service_requests ADD COLUMN urgency_level VARCHAR(50) DEFAULT 'normal';
+  END IF;
+  
+  -- Add estimated_completion_date
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'service_requests' AND column_name = 'estimated_completion_date') THEN
+    ALTER TABLE service_requests ADD COLUMN estimated_completion_date TIMESTAMP;
+  END IF;
+  
+  -- Add actual_completion_date
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'service_requests' AND column_name = 'actual_completion_date') THEN
+    ALTER TABLE service_requests ADD COLUMN actual_completion_date TIMESTAMP;
+  END IF;
+  
+  -- Add total_fees
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'service_requests' AND column_name = 'total_fees') THEN
+    ALTER TABLE service_requests ADD COLUMN total_fees DECIMAL(15,2);
+  END IF;
+  
+  -- Add paid_amount
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'service_requests' AND column_name = 'paid_amount') THEN
+    ALTER TABLE service_requests ADD COLUMN paid_amount DECIMAL(15,2) DEFAULT 0;
+  END IF;
+  
+  -- Add payment_status
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'service_requests' AND column_name = 'payment_status') THEN
+    ALTER TABLE service_requests ADD COLUMN payment_status VARCHAR(50) DEFAULT 'unpaid';
+  END IF;
+  
+  -- rejection_reason already exists, skip
+  
+  -- Add rejection_reason_am
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'service_requests' AND column_name = 'rejection_reason_am') THEN
+    ALTER TABLE service_requests ADD COLUMN rejection_reason_am TEXT;
+  END IF;
+  
+  -- Add can_resubmit
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'service_requests' AND column_name = 'can_resubmit') THEN
+    ALTER TABLE service_requests ADD COLUMN can_resubmit BOOLEAN DEFAULT TRUE;
+  END IF;
+  
+  -- Add resubmission_deadline
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'service_requests' AND column_name = 'resubmission_deadline') THEN
+    ALTER TABLE service_requests ADD COLUMN resubmission_deadline TIMESTAMP;
+  END IF;
+  
+  -- Add parent_request_id
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'service_requests' AND column_name = 'parent_request_id') THEN
+    ALTER TABLE service_requests ADD COLUMN parent_request_id UUID;
+  END IF;
+  
+  -- Add issued_document_id
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'service_requests' AND column_name = 'issued_document_id') THEN
+    ALTER TABLE service_requests ADD COLUMN issued_document_id UUID;
+  END IF;
+END $$;
+
+-- Add foreign keys
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.table_constraints 
+    WHERE constraint_name = 'service_requests_business_profile_id_fkey' AND table_name = 'service_requests'
+  ) THEN
+    ALTER TABLE service_requests ADD CONSTRAINT service_requests_business_profile_id_fkey FOREIGN KEY (business_profile_id) REFERENCES business_profiles(id);
+  END IF;
+  
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.table_constraints 
+    WHERE constraint_name = 'service_requests_parent_request_id_fkey' AND table_name = 'service_requests'
+  ) THEN
+    ALTER TABLE service_requests ADD CONSTRAINT service_requests_parent_request_id_fkey FOREIGN KEY (parent_request_id) REFERENCES service_requests(id);
+  END IF;
+EXCEPTION WHEN others THEN
+  NULL;
+END $$;
 
 CREATE INDEX IF NOT EXISTS idx_requests_business ON service_requests(business_profile_id);
 CREATE INDEX IF NOT EXISTS idx_requests_payment_status ON service_requests(payment_status);
@@ -371,28 +520,30 @@ CREATE INDEX IF NOT EXISTS idx_requests_completion ON service_requests(estimated
 CREATE OR REPLACE VIEW v_g2b_service_catalog AS
 SELECT 
   s.id,
-  s.service_code,
+  COALESCE(s.service_code, 'SVC-' || SUBSTRING(s.id::text, 1, 8)) as service_code,
   s.name,
   s.name_am,
   s.name_or,
   s.description,
   s.description_am,
   s.description_or,
-  s.target_audience,
+  COALESCE(s.target_audience, 'citizen') as target_audience,
   sc.name as category_name,
   sc.name_am as category_name_am,
   bs.name as sector_name,
   bs.name_am as sector_name_am,
   bs.icon as sector_icon,
-  s.service_fee as base_fee,
+  COALESCE(s.service_fee, 0) as base_fee,
   s.min_processing_days,
   s.max_processing_days,
   s.estimated_processing_days,
   s.online_available,
-  s.is_renewable,
+  COALESCE(s.is_renewable, FALSE) as is_renewable,
   s.renewal_period_months,
   s.validity_period_months,
   s.status,
+  s.agency,
+  s.sector,
   COALESCE(
     (SELECT json_agg(json_build_object(
       'id', sv.id,
