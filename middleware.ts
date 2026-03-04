@@ -1,5 +1,3 @@
-"use client"
-
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 
@@ -51,7 +49,7 @@ function getTokenPayload(token: string): { id: string; email: string; role: stri
   try {
     const parts = token.split(".")
     if (parts.length !== 3) return null
-    const payload = JSON.parse(atob(parts[1]))
+    const payload = JSON.parse(Buffer.from(parts[1], 'base64').toString('utf-8'))
     if (payload.exp && payload.exp * 1000 < Date.now()) return null
     return payload
   } catch {
@@ -135,6 +133,13 @@ export function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|public/).*)",
+    /*
+     * Match all request paths except for the ones starting with:
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - favicon.ico (favicon file)
+     * - public (public files)
+     */
+    "/((?!_next/static|_next/image|favicon.ico|public).*)",
   ],
 }
