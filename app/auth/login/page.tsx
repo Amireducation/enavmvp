@@ -90,25 +90,6 @@ export default function LoginPage() {
     }
   }
 
-      // Store token and user
-      authLib.setToken(data.token)
-      authLib.setUser(data.user)
-      setUser(data.user)
-
-      const redirectMap: Record<string, string> = {
-        citizen: "/citizen",
-        employee: "/employee",
-        admin: "/admin",
-        partner: "/partner",
-      }
-      router.push(redirectMap[data.user.role] || "/citizen")
-    } catch {
-      setError("Network error. Please try again.")
-    }
-
-    setLoading(false)
-  }
-
   const handleDemoLogin = (role: keyof typeof demoCredentials) => {
     setEmail(demoCredentials[role].email)
     setPassword(demoCredentials[role].password)

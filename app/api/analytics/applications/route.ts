@@ -88,16 +88,6 @@ export async function GET(request: Request) {
     return errorResponse("ANALYTICS_ERROR", "Failed to fetch analytics", 500)
   }
 }
-      SELECT 
-        'Total Submitted' as stage,
-        COUNT(*) as count
-      FROM service_requests
-      UNION ALL
-      SELECT 'Under Review', COUNT(*) FROM service_requests WHERE status = 'under_review'
-      UNION ALL
-      SELECT 'Approved', COUNT(*) FROM service_requests WHERE status = 'approved'
-      UNION ALL
-      SELECT 'Rejected', COUNT(*) FROM service_requests WHERE status = 'rejected'
     `
 
     return NextResponse.json({

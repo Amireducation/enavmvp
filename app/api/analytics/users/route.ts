@@ -56,32 +56,3 @@ export async function GET(request: Request) {
     return errorResponse("ANALYTICS_ERROR", "Failed to fetch user analytics", 500)
   }
 }
-      LEFT JOIN service_requests sr ON u.id = sr.user_id
-      WHERE u.role = 'citizen'
-      GROUP BY u.id, u.full_name, u.email
-      ORDER BY application_count DESC
-      LIMIT 10
-    `
-
-    return NextResponse.json({
-      userStats: userStats.map((s: Record<string, unknown>) => ({
-        role: s.role,
-        total: s.count,
-        active: s.active_count,
-        verified: s.verified_count,
-      })),
-      dailyRegistrations: dailyRegistrations.map((d: Record<string, unknown>) => ({
-        date: d.date,
-        count: d.count,
-      })),
-      topUsers: topUsers.map((u: Record<string, unknown>) => ({
-        name: u.full_name,
-        email: u.email,
-        applications: u.application_count,
-      })),
-    })
-  } catch (error) {
-    console.error("User analytics error:", error)
-    return NextResponse.json({ error: "Failed to fetch user metrics" }, { status: 500 })
-  }
-}

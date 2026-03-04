@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getUserFromRequest } from "@/lib/api-utils"
-import { sql } from "@neondatabase/serverless"
+import { sql } from "@/lib/db"
 
 export async function GET(req: NextRequest) {
   try {

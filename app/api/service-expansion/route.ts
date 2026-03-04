@@ -83,20 +83,6 @@ export async function POST(request: Request) {
     return errorResponse("EXPANSION_CREATE_ERROR", "Failed to create service expansion request", 500)
   }
 }
-      },
-    })
-  } catch (error) {
-    console.error("Service expansion create error:", error)
-    return NextResponse.json({ error: "Failed to create expansion request" }, { status: 500 })
-  }
-}
-
-export async function GET(request: Request) {
-  try {
-    const user = getUserFromRequest(request)
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-    }
 
     const url = new URL(request.url)
     const status = url.searchParams.get("status")

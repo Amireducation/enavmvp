@@ -43,12 +43,3 @@ export async function GET(request: Request) {
     return errorResponse("ANALYTICS_ERROR", "Failed to fetch service analytics", 500)
   }
 }
-        approvalRate: m.approval_rate,
-        daysSinceLaunch: m.days_since_launch,
-      })),
-    })
-  } catch (error) {
-    console.error("Service analytics error:", error)
-    return NextResponse.json({ error: "Failed to fetch service metrics" }, { status: 500 })
-  }
-}
