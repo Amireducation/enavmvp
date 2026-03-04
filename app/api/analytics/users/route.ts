@@ -1,13 +1,10 @@
 import { NextResponse } from "next/server"
 import { sql } from "@/lib/db"
-import { getUserFromRequest } from "@/lib/api-utils"
+import { requireRole, successResponse, errorResponse } from "@/lib/api-utils"
 
 export async function GET(request: Request) {
   try {
-    const user = await getUserFromRequest(request)
-    if (!user || user.role !== "admin") {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 403 })
-    }
+    const user = requireRole(request, ["admin"])
 
     // User statistics
     const userStats = await sql`
@@ -36,8 +33,29 @@ export async function GET(request: Request) {
       SELECT 
         u.full_name,
         u.email,
+        u.role,
         COUNT(sr.id) as application_count
       FROM users u
+      LEFT JOIN service_requests sr ON u.id = sr.user_id
+      GROUP BY u.id, u.full_name, u.email, u.role
+      HAVING COUNT(sr.id) > 0
+      ORDER BY application_count DESC
+      LIMIT 10
+    `
+
+    return successResponse({
+      user_stats: userStats,
+      daily_registrations: dailyRegistrations,
+      top_users: topUsers,
+    })
+  } catch (error: any) {
+    console.error("Users analytics error:", error)
+    if (error.message === "FORBIDDEN") {
+      return errorResponse("FORBIDDEN", "Admin access required", 403)
+    }
+    return errorResponse("ANALYTICS_ERROR", "Failed to fetch user analytics", 500)
+  }
+}
       LEFT JOIN service_requests sr ON u.id = sr.user_id
       WHERE u.role = 'citizen'
       GROUP BY u.id, u.full_name, u.email

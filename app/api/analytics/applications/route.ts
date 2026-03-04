@@ -1,13 +1,10 @@
 import { NextResponse } from "next/server"
 import { sql } from "@/lib/db"
-import { getUserFromRequest } from "@/lib/api-utils"
+import { requireRole, successResponse, errorResponse } from "@/lib/api-utils"
 
 export async function GET(request: Request) {
   try {
-    const user = await getUserFromRequest(request)
-    if (!user || user.role !== "admin") {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 403 })
-    }
+    const user = requireRole(request, ["admin"])
 
     // Application status distribution
     const statusDistribution = await sql`
@@ -48,6 +45,49 @@ export async function GET(request: Request) {
 
     // Application conversion funnel
     const funnel = await sql`
+      SELECT 
+        'submitted' as stage,
+        COUNT(*) as count
+      FROM service_requests
+      WHERE status IN ('submitted', 'submitted_for_review', 'under_review', 'approved', 'issued', 'completed')
+      UNION ALL
+      SELECT 
+        'under_review' as stage,
+        COUNT(*) as count
+      FROM service_requests
+      WHERE status IN ('under_review', 'approved', 'issued', 'completed')
+      UNION ALL
+      SELECT 
+        'approved' as stage,
+        COUNT(*) as count
+      FROM service_requests
+      WHERE status IN ('approved', 'issued', 'completed')
+      UNION ALL
+      SELECT 
+        'completed' as stage,
+        COUNT(*) as count
+      FROM service_requests
+      WHERE status = 'completed'
+    `
+
+    return successResponse({
+      status_distribution: statusDistribution,
+      daily_applications: dailyApplications,
+      processing_times: processingTimes,
+      conversion_funnel: funnel,
+      generated_at: new Date().toISOString(),
+    })
+  } catch (error: any) {
+    console.error("Analytics error:", error)
+    if (error.message === "FORBIDDEN") {
+      return errorResponse("FORBIDDEN", "Admin access required", 403)
+    }
+    if (error.message === "UNAUTHORIZED") {
+      return errorResponse("UNAUTHORIZED", "Authentication required", 401)
+    }
+    return errorResponse("ANALYTICS_ERROR", "Failed to fetch analytics", 500)
+  }
+}
       SELECT 
         'Total Submitted' as stage,
         COUNT(*) as count
