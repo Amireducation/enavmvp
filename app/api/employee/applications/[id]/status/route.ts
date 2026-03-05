@@ -20,8 +20,8 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     const updated = await sql`
       UPDATE service_requests SET
         status = ${status},
-        notes = COALESCE(${notes || null}, notes),
-        assigned_to = ${user.sub},
+        reviewer_notes = COALESCE(${notes || null}, reviewer_notes),
+        assigned_to = ${user.id},
         updated_at = NOW()
       WHERE id = ${id}
       RETURNING id, status

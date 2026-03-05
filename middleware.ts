@@ -48,11 +48,40 @@ export function middleware(request: NextRequest) {
 
   // If no token, redirect to login
   if (!token) {
+    const loginUrl = new URL("/auth/login", request.url)
+    loginUrl.searchParams.set("redirect", pathname)
+    return NextResponse.redirect(loginUrl)
+  }
+
+  // Parse token to get user role
+  try {
+    const parts = token.split(".")
+    if (parts.length >= 2) {
+      const payload = JSON.parse(atob(parts[1]))
+      const userRole = payload.role
+      
+      // Check if token is expired
+      if (payload.exp && payload.exp * 1000 < Date.now()) {
+        const loginUrl = new URL("/auth/login", request.url)
+        return NextResponse.redirect(loginUrl)
+      }
+      
+      // Check RBAC for protected routes
+      for (const [route, allowedRoles] of Object.entries(protectedRoutes)) {
+        if (pathname.startsWith(route)) {
+          if (!allowedRoles.includes(userRole)) {
+            // Redirect to user's own portal if they don't have access
+            return NextResponse.redirect(new URL(`/${userRole}`, request.url))
+          }
+          break
+        }
+      }
+    }
+  } catch (e) {
+    // Invalid token, redirect to login
     return NextResponse.redirect(new URL("/auth/login", request.url))
   }
 
-  // For now, allow all authenticated requests
-  // In production, validate token and check role against protectedRoutes
   return NextResponse.next()
 }
 

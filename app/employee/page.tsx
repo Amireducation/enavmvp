@@ -142,12 +142,14 @@ function EmployeePortalContent() {
             </div>
 
             <div className="flex items-center gap-2 sm:gap-4">
-              <Button variant="ghost" size="icon" className="relative">
-                <Bell className="w-5 h-5" />
-                <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
-                  3
-                </span>
-              </Button>
+              <Link href="/notifications">
+                <Button variant="ghost" size="icon" className="relative">
+                  <Bell className="w-5 h-5" />
+                  <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
+                    3
+                  </span>
+                </Button>
+              </Link>
               <Link href="/settings">
                 <Button variant="ghost" size="icon">
                   <Settings className="w-5 h-5" />
@@ -378,7 +380,7 @@ function EmployeePortalContent() {
 
 export default function EmployeePage() {
   return (
-    <ProtectedRoute requiredRoles={["employee"]}>
+    <ProtectedRoute requiredRoles={["employee", "admin"]}>
       <EmployeePortalContent />
     </ProtectedRoute>
   )

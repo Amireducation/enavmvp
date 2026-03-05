@@ -18,6 +18,8 @@ interface Feedback {
   comments: string
   category: string
   created_at: string
+  user_name?: string
+  service_name?: string
 }
 
 function FeedbackManagementContent() {
@@ -41,8 +43,10 @@ function FeedbackManagementContent() {
   const fetchFeedback = async () => {
     try {
       setLoading(true)
-      const res = await apiClient.get<{ feedback: Feedback[] }>("/feedback")
-      setFeedbackList(res.feedback || [])
+      const res = await apiClient.get<{ feedback: Feedback[] } | Feedback[]>("/feedback")
+      // Handle both direct array and wrapped response
+      const feedbackData = Array.isArray(res) ? res : (res.feedback || [])
+      setFeedbackList(feedbackData)
     } catch (err) {
       console.error("Failed to fetch feedback:", err)
     } finally {

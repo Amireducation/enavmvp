@@ -31,16 +31,16 @@ import { ProtectedRoute } from "@/components/protected-route"
 import { apiClient } from "@/lib/api-client"
 
 interface Service {
-  service_id: string
+  id: string
   name: string
   category: string
   description: string
   service_fee: number
-  estimated_processing_time: string
+  estimated_processing_days: number
 }
 
 interface Application {
-  application_id: string
+  id: string
   service_name: string
   tracking_number: string
   status: string
@@ -49,7 +49,7 @@ interface Application {
 }
 
 interface Notification {
-  notification_id: string
+  id: string
   is_read: boolean
 }
 
@@ -70,13 +70,14 @@ function CitizenPortalContent() {
     async function fetchData() {
       try {
         const [svcData, appData, notifData] = await Promise.all([
-          apiClient.get<{ services: Service[] }>("/services"),
-          apiClient.get<{ applications: Application[] }>("/applications").catch(() => ({ applications: [] })),
-          apiClient.get<{ notifications: Notification[] }>("/notifications").catch(() => ({ notifications: [] })),
+          apiClient.get<Service[]>("/services"),
+          apiClient.get<Application[]>("/applications").catch(() => []),
+          apiClient.get<Notification[]>("/notifications").catch(() => []),
         ])
-        setServices(svcData.services || [])
-        setApplications(appData.applications || [])
-        setNotifications(notifData.notifications || [])
+        // apiClient already unwraps data from successResponse
+        setServices(Array.isArray(svcData) ? svcData : [])
+        setApplications(Array.isArray(appData) ? appData : [])
+        setNotifications(Array.isArray(notifData) ? notifData : [])
       } catch (err) {
         console.error("Failed to fetch data:", err)
       } finally {
@@ -100,8 +101,8 @@ function CitizenPortalContent() {
     setApplyingService(serviceId)
     try {
       await apiClient.post("/applications", { service_id: serviceId })
-      const appData = await apiClient.get<{ applications: Application[] }>("/applications").catch(() => ({ applications: [] }))
-      setApplications(appData.applications || [])
+      const appData = await apiClient.get<Application[]>("/applications").catch(() => [])
+      setApplications(Array.isArray(appData) ? appData : [])
       alert("Application submitted successfully! Check 'My Applications' tab for status updates.")
     } catch (err) {
       alert("Failed to submit application. Please try again.")
@@ -111,13 +112,23 @@ function CitizenPortalContent() {
     }
   }
 
-  const handleFeedbackSubmit = (e: React.FormEvent) => {
+  const handleFeedbackSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setFeedbackSubmitted(true)
-    setTimeout(() => {
-      setFeedback({ rating: 5, comments: "" })
-      setFeedbackSubmitted(false)
-    }, 3000)
+    try {
+      await apiClient.post("/feedback", {
+        rating: feedback.rating,
+        comment: feedback.comments,
+        category: "general",
+      })
+      setFeedbackSubmitted(true)
+      setTimeout(() => {
+        setFeedback({ rating: 5, comments: "" })
+        setFeedbackSubmitted(false)
+      }, 3000)
+    } catch (err) {
+      console.error("Failed to submit feedback:", err)
+      alert("Failed to submit feedback. Please try again.")
+    }
   }
 
   const getStatusIcon = (status: string) => {
@@ -180,14 +191,16 @@ function CitizenPortalContent() {
                 </Button>
               </Link>
 
-              <Button variant="ghost" size="icon" className="relative">
-                <Bell className="w-5 h-5" />
-                {unreadNotifications > 0 && (
-                  <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
-                    {unreadNotifications}
-                  </span>
-                )}
-              </Button>
+              <Link href="/notifications">
+                <Button variant="ghost" size="icon" className="relative">
+                  <Bell className="w-5 h-5" />
+                  {unreadNotifications > 0 && (
+                    <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
+                      {unreadNotifications}
+                    </span>
+                  )}
+                </Button>
+              </Link>
 
               <Link href="/settings">
                 <Button variant="ghost" size="icon">
@@ -329,27 +342,27 @@ function CitizenPortalContent() {
             ) : (
               <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {filteredServices.map((service) => (
-                  <Card key={service.service_id} className="overflow-hidden group hover:shadow-lg transition-all">
+                  <Card key={service.id} className="overflow-hidden group hover:shadow-lg transition-all">
                     <div className="h-1 bg-gradient-to-r from-emerald-500 to-emerald-600" />
                     <div className="p-5">
                       <div className="flex items-start justify-between mb-3">
                         <Badge variant="secondary" className="text-xs">
-                          {service.category}
+                          {service.category || "General"}
                         </Badge>
-                        <span className="text-sm font-semibold text-emerald-600">ETB {service.service_fee}</span>
+                        <span className="text-sm font-semibold text-emerald-600">ETB {service.service_fee || 0}</span>
                       </div>
                       <h3 className="font-semibold text-lg mb-2">{service.name}</h3>
                       <p className="text-sm text-muted-foreground mb-4 line-clamp-2">{service.description}</p>
                       <div className="flex items-center gap-2 text-xs text-muted-foreground mb-4">
                         <Clock className="w-3 h-3" />
-                        {service.estimated_processing_time}
+                        {service.estimated_processing_days} days
                       </div>
                       <Button
                         className="w-full bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-500 hover:to-emerald-600 text-white"
-                        onClick={() => handleApply(service.service_id)}
-                        disabled={applyingService === service.service_id}
+                        onClick={() => handleApply(service.id)}
+                        disabled={applyingService === service.id}
                       >
-                        {applyingService === service.service_id ? (
+                        {applyingService === service.id ? (
                           <>
                             <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                             Applying...
@@ -374,7 +387,7 @@ function CitizenPortalContent() {
               </Card>
             ) : (
               applications.map((app) => (
-                <Card key={app.application_id} className="p-5 hover:shadow-md transition-shadow">
+                <Card key={app.id} className="p-5 hover:shadow-md transition-shadow">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div className="flex items-start gap-4">
                       <div className="w-12 h-12 rounded-lg bg-muted flex items-center justify-center">
@@ -481,7 +494,7 @@ function CitizenPortalContent() {
 
 export default function CitizenPage() {
   return (
-    <ProtectedRoute requiredRoles={["citizen"]}>
+    <ProtectedRoute requiredRoles={["citizen", "employee", "admin"]}>
       <CitizenPortalContent />
     </ProtectedRoute>
   )

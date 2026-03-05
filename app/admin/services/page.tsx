@@ -17,15 +17,15 @@ import { apiClient } from "@/lib/api-client"
 import Link from "next/link"
 
 interface Service {
-  service_id: string
+  id: string
   name: string
   category: string
   description: string
-  responsible_agency: string
-  estimated_processing_time: string
+  agency: string
+  estimated_processing_days: number
   service_fee: number
   requirements: string[]
-  is_archived: boolean
+  status: string
 }
 
 interface ServiceStats {
@@ -63,14 +63,14 @@ function ServiceManagementContent() {
     try {
       setLoading(true)
       const [servicesRes, categoriesRes] = await Promise.all([
-        apiClient.get<{ services: Service[] }>(
+        apiClient.get<Service[]>(
           `/services${categoryFilter !== "all" ? `?category=${categoryFilter}` : ""}`,
         ),
-        apiClient.get<{ categories: string[] }>("/services/categories"),
+        apiClient.get<Array<{ name: string }>>("/services/categories"),
       ])
 
-      setServices(servicesRes.services || [])
-      setCategories(categoriesRes.categories || [])
+      setServices(Array.isArray(servicesRes) ? servicesRes : [])
+      setCategories(Array.isArray(categoriesRes) ? categoriesRes.map((c) => c.name) : [])
     } catch (err) {
       console.error("Failed to fetch data:", err)
     } finally {
@@ -106,7 +106,7 @@ function ServiceManagementContent() {
     if (!selectedService) return
 
     try {
-      await apiClient.patch(`/services/${selectedService.service_id}`, {
+      await apiClient.patch(`/services/${selectedService.id}`, {
         ...formData,
         requirements: formData.requirements.split("\n").filter((r) => r.trim()),
       })
@@ -133,20 +133,21 @@ function ServiceManagementContent() {
     setSelectedService(service)
     setFormData({
       name: service.name,
-      category: service.category,
-      description: service.description,
-      responsible_agency: service.responsible_agency,
-      estimated_processing_time: service.estimated_processing_time,
-      service_fee: service.service_fee,
-      requirements: service.requirements.join("\n"),
+      category: service.category || "",
+      description: service.description || "",
+      responsible_agency: service.agency || "",
+      estimated_processing_time: `${service.estimated_processing_days || 7} days`,
+      service_fee: service.service_fee || 0,
+      requirements: Array.isArray(service.requirements) ? service.requirements.join("\n") : "",
     })
 
     // Fetch service stats
     try {
-      const statsRes = await apiClient.get<{ stats: ServiceStats }>(`/services/${service.service_id}/stats`)
+      const statsRes = await apiClient.get<{ stats: ServiceStats }>(`/services/${service.id}/stats`)
       setServiceStats(statsRes.stats)
     } catch (err) {
       console.error("Failed to fetch stats:", err)
+      setServiceStats(null)
     }
 
     setIsEditModalOpen(true)
@@ -215,21 +216,21 @@ function ServiceManagementContent() {
         ) : (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
             {filteredServices.map((service) => (
-              <Card key={service.service_id} className="bg-slate-800 border-slate-700 p-6">
+              <Card key={service.id} className="bg-slate-800 border-slate-700 p-6">
                 <div className="space-y-3">
                   <div>
                     <h3 className="text-lg font-bold text-white">{service.name}</h3>
-                    <p className="text-amber-400 text-sm">{service.category}</p>
+                    <p className="text-amber-400 text-sm">{service.category || "General"}</p>
                   </div>
                   <p className="text-slate-400 text-sm line-clamp-2">{service.description}</p>
                   <div className="space-y-2 py-3 border-y border-slate-700">
                     <div className="flex items-center gap-2 text-sm text-slate-300">
                       <Clock className="w-4 h-4 text-blue-400" />
-                      <span>{service.estimated_processing_time}</span>
+                      <span>{service.estimated_processing_days} days</span>
                     </div>
                     <div className="flex items-center gap-2 text-sm text-slate-300">
                       <DollarSign className="w-4 h-4 text-green-400" />
-                      <span>ETB {Number(service.service_fee).toFixed(2)}</span>
+                      <span>ETB {Number(service.service_fee || 0).toFixed(2)}</span>
                     </div>
                   </div>
                   <div className="flex gap-2">
@@ -243,7 +244,7 @@ function ServiceManagementContent() {
                     </Button>
                     <Button
                       size="sm"
-                      onClick={() => handleArchiveService(service.service_id)}
+                      onClick={() => handleArchiveService(service.id)}
                       variant="outline"
                       className="flex-1 border-red-600 text-red-400 hover:bg-red-600/20"
                     >

@@ -331,7 +331,7 @@ function ChatbotContent() {
 
 export default function ChatbotPage() {
   return (
-    <ProtectedRoute requiredRoles={["citizen"]}>
+    <ProtectedRoute requiredRoles={["citizen", "employee", "admin", "partner"]}>
       <ChatbotContent />
     </ProtectedRoute>
   )

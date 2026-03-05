@@ -10,7 +10,7 @@ import { ProtectedRoute } from "@/components/protected-route"
 import { apiClient } from "@/lib/api-client"
 
 interface Notification {
-  notification_id: string
+  id: string
   type: string
   title: string
   message: string
@@ -31,8 +31,8 @@ function NotificationsContent() {
   const fetchNotifications = async () => {
     try {
       setLoading(true)
-      const res = await apiClient.get<{ notifications: Notification[] }>("/notifications")
-      setNotifications(res.notifications || [])
+      const res = await apiClient.get<Notification[]>("/notifications")
+      setNotifications(Array.isArray(res) ? res : [])
     } catch (err) {
       console.error("Failed to fetch notifications:", err)
     } finally {
@@ -43,7 +43,7 @@ function NotificationsContent() {
   const markAsRead = async (id: string) => {
     try {
       await apiClient.patch(`/notifications/${id}/read`)
-      setNotifications((prev) => prev.map((n) => (n.notification_id === id ? { ...n, is_read: true } : n)))
+      setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, is_read: true } : n)))
     } catch (err) {
       console.error("Failed to mark as read:", err)
     }
@@ -52,7 +52,7 @@ function NotificationsContent() {
   const markAllAsRead = async () => {
     try {
       await Promise.all(
-        notifications.filter((n) => !n.is_read).map((n) => apiClient.patch(`/notifications/${n.notification_id}/read`)),
+        notifications.filter((n) => !n.is_read).map((n) => apiClient.patch(`/notifications/${n.id}/read`)),
       )
       fetchNotifications()
     } catch (err) {
@@ -112,7 +112,7 @@ function NotificationsContent() {
           <div className="space-y-2">
             {notifications.map((notif) => (
               <Card
-                key={notif.notification_id}
+                key={notif.id}
                 className={`border-slate-700 p-4 transition-all ${
                   notif.is_read ? "bg-slate-800" : "bg-slate-800/80 border-l-4 border-l-amber-500"
                 }`}
@@ -138,7 +138,7 @@ function NotificationsContent() {
                       <Button
                         size="sm"
                         variant="ghost"
-                        onClick={() => markAsRead(notif.notification_id)}
+                        onClick={() => markAsRead(notif.id)}
                         className="text-white"
                       >
                         <Check className="w-4 h-4" />

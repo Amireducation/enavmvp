@@ -79,8 +79,10 @@ export default function LoginPage() {
       if (userData.token && userData.user) {
         authLib.setToken(userData.token)
         authLib.setUser(userData.user)
+        // Set cookie for middleware auth
+        document.cookie = `auth_token=${userData.token}; path=/; max-age=86400; SameSite=Lax`
         setUser(userData.user)
-        router.push(`/${userData.user.role}/dashboard`)
+        router.push(`/${userData.user.role}`)
       }
     } catch (err) {
       setError("An error occurred during login. Please try again.")
