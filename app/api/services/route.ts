@@ -54,17 +54,45 @@ export async function POST(request: Request) {
     const user = requireRole(request, ["admin", "employee"])
 
     const body = await request.json()
-    const { name, name_am, description, description_am, category_id, service_fee, estimated_processing_days, agency, requirements } = body
+    const { 
+      name, name_am, description, description_am, 
+      category, category_id, service_fee, estimated_processing_days,
+      min_processing_days, max_processing_days,
+      agency, responsible_agency, requirements,
+      online_available, target_audience, contact_email, contact_phone
+    } = body
 
     // Validation
     if (!name) {
       return errorResponse("INVALID_INPUT", "Service name is required", 400)
     }
 
+    // Look up category_id if category name provided
+    let resolvedCategoryId = category_id
+    if (!resolvedCategoryId && category) {
+      const cats = await sql`SELECT id FROM service_categories WHERE name = ${category} LIMIT 1`
+      if (cats.length > 0) {
+        resolvedCategoryId = cats[0].id
+      }
+    }
+
     const newService = await sql`
-      INSERT INTO services (name, name_am, description, description_am, category_id, service_fee, estimated_processing_days, agency, requirements, created_by)
-      VALUES (${name}, ${name_am || null}, ${description}, ${description_am || null}, ${category_id || null}, ${service_fee || 0}, ${estimated_processing_days || 7}, ${agency || null}, ${JSON.stringify(requirements || [])}, ${user.id})
-      RETURNING id, name, description, service_fee, estimated_processing_days
+      INSERT INTO services (
+        name, name_am, description, description_am, 
+        category_id, service_fee, estimated_processing_days,
+        min_processing_days, max_processing_days,
+        agency, requirements, online_available, target_audience,
+        contact_email, contact_phone, created_by, status
+      )
+      VALUES (
+        ${name}, ${name_am || null}, ${description || null}, ${description_am || null}, 
+        ${resolvedCategoryId || null}, ${service_fee || 0}, ${estimated_processing_days || 7},
+        ${min_processing_days || 5}, ${max_processing_days || 14},
+        ${agency || responsible_agency || null}, ${JSON.stringify(requirements || [])}, 
+        ${online_available !== false}, ${target_audience || 'all'},
+        ${contact_email || null}, ${contact_phone || null}, ${user.id}, 'active'
+      )
+      RETURNING id, name, description, service_fee, estimated_processing_days, status
     `
 
     return successResponse(newService[0], {})

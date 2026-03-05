@@ -143,18 +143,33 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 
     const { id } = await params
     const body = await request.json()
-    const { name, description, service_fee, estimated_processing_days, status } = body
+    const { 
+      name, name_am, description, description_am,
+      service_fee, estimated_processing_days, min_processing_days, max_processing_days,
+      status, agency, online_available, target_audience,
+      contact_email, contact_phone, requirements
+    } = body
 
     const updated = await sql`
       UPDATE services SET
         name = COALESCE(${name || null}, name),
+        name_am = COALESCE(${name_am || null}, name_am),
         description = COALESCE(${description || null}, description),
+        description_am = COALESCE(${description_am || null}, description_am),
         service_fee = COALESCE(${service_fee ?? null}, service_fee),
         estimated_processing_days = COALESCE(${estimated_processing_days ?? null}, estimated_processing_days),
+        min_processing_days = COALESCE(${min_processing_days ?? null}, min_processing_days),
+        max_processing_days = COALESCE(${max_processing_days ?? null}, max_processing_days),
         status = COALESCE(${status || null}, status),
+        agency = COALESCE(${agency || null}, agency),
+        online_available = COALESCE(${online_available ?? null}, online_available),
+        target_audience = COALESCE(${target_audience || null}, target_audience),
+        contact_email = COALESCE(${contact_email || null}, contact_email),
+        contact_phone = COALESCE(${contact_phone || null}, contact_phone),
+        requirements = COALESCE(${requirements ? JSON.stringify(requirements) : null}, requirements),
         updated_at = NOW()
       WHERE id = ${id}
-      RETURNING id as service_id, name
+      RETURNING id, name, status
     `
 
     if (updated.length === 0) {

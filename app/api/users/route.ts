@@ -9,12 +9,32 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 })
     }
 
-    const users = await sql`
+    const { searchParams } = new URL(request.url)
+    const role = searchParams.get("role")
+    const status = searchParams.get("status")
+    const search = searchParams.get("search")
+
+    let query = `
       SELECT id, email, full_name, phone, role, status, preferred_language,
-        created_at, last_login_at
+        city, region, address, avatar_url, email_verified,
+        created_at, updated_at, last_login_at
       FROM users
-      ORDER BY created_at DESC
+      WHERE 1=1
     `
+    
+    if (role && role !== "all") {
+      query += ` AND role = '${role}'`
+    }
+    if (status && status !== "all") {
+      query += ` AND status = '${status}'`
+    }
+    if (search) {
+      query += ` AND (email ILIKE '%${search}%' OR full_name ILIKE '%${search}%' OR phone ILIKE '%${search}%')`
+    }
+    
+    query += ` ORDER BY created_at DESC`
+
+    const users = await sql.unsafe(query)
 
     return NextResponse.json({ users })
   } catch (error) {

@@ -11,16 +11,21 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
 
     const { id } = await params
     const body = await request.json()
-    const { role, full_name, phone } = body
+    const { role, full_name, phone, status, preferred_language, city, region, address } = body
 
     const updated = await sql`
       UPDATE users SET
         role = COALESCE(${role || null}, role),
         full_name = COALESCE(${full_name || null}, full_name),
         phone = COALESCE(${phone || null}, phone),
+        status = COALESCE(${status || null}, status),
+        preferred_language = COALESCE(${preferred_language || null}, preferred_language),
+        city = COALESCE(${city || null}, city),
+        region = COALESCE(${region || null}, region),
+        address = COALESCE(${address || null}, address),
         updated_at = NOW()
       WHERE id = ${id}
-      RETURNING id, email, full_name, role
+      RETURNING id, email, full_name, role, status, preferred_language, city, region
     `
 
     if (updated.length === 0) {
