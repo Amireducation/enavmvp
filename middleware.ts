@@ -22,11 +22,12 @@ const publicRoutes = [
 ]
 
 export function middleware(request: NextRequest) {
-  // Skip static files and images
+  // Skip static files, images, and service worker
   if (
     request.nextUrl.pathname.startsWith("/_next/") ||
     request.nextUrl.pathname.startsWith("/public/") ||
-    request.nextUrl.pathname.match(/\.(png|jpg|jpeg|gif|ico|svg|webp)$/)
+    request.nextUrl.pathname === "/service-worker.js" ||
+    request.nextUrl.pathname.match(/\.(png|jpg|jpeg|gif|ico|svg|webp|js|json)$/)
   ) {
     return NextResponse.next()
   }
