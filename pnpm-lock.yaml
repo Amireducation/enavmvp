@@ -143,6 +143,9 @@ importers:
       express:
         specifier: 5.2.1
         version: 5.2.1
+      groq-sdk:
+        specifier: ^1.1.1
+        version: 1.1.1
       i18next:
         specifier: 25.8.13
         version: 25.8.13(typescript@5.9.3)
@@ -2123,6 +2126,10 @@ packages:
 
   graceful-fs@4.2.11:
     resolution: {integrity: sha512-RbJ5/jmFcNNCcDV5o9eTnBLJ/HszWV0P73bc+Ff4nS/rJj+YaS6IGyiOL0VoBYX+l1Wrl3k63h/KrH+nhJ0XvQ==}
+
+  groq-sdk@1.1.1:
+    resolution: {integrity: sha512-p0fb/sfrYfUDJf+b4s+ptV6XrQnY0gA0u2pbaH4E1l6yaeLCKtdX5OBhP/wXXBuKrSnU9w45RaFebfJDWxsXMw==}
+    hasBin: true
 
   has-symbols@1.1.0:
     resolution: {integrity: sha512-1cDNdwJ2Jaohmb3sg4OmKaMBwuC48sYni5HUw2DvsC8LjGTLK9h+eb1X6RyuOHe4hT0ULCW68iomhjUoKUqlPQ==}
@@ -5064,6 +5071,8 @@ snapshots:
   gopd@1.2.0: {}
 
   graceful-fs@4.2.11: {}
+
+  groq-sdk@1.1.1: {}
 
   has-symbols@1.1.0: {}
 

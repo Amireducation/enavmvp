@@ -38,6 +38,10 @@ import {
 import { useAuth } from "@/components/auth-provider"
 import { ProtectedRoute } from "@/components/protected-route"
 import { apiClient } from "@/lib/api-client"
+import { NotificationCenter } from "@/components/notification-center"
+import { AnalyticsDashboard } from "@/components/admin/analytics-dashboard"
+import { ServiceManagementPanel } from "@/components/admin/service-management-panel"
+import { UserManagementPanel } from "@/components/admin/user-management-panel"
 
 const statusDistribution = [
   { name: "Completed", value: 3444333, color: "#10b981" },
@@ -131,12 +135,7 @@ function AdminDashboardContent() {
             </div>
 
             <div className="flex items-center gap-2 sm:gap-4">
-              <Button variant="ghost" size="icon" className="relative">
-                <Bell className="w-5 h-5" />
-                <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
-                  5
-                </span>
-              </Button>
+              <NotificationCenter />
               <Link href="/settings">
                 <Button variant="ghost" size="icon">
                   <Settings className="w-5 h-5" />
