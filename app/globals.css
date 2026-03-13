@@ -118,8 +118,8 @@ body {
   font-feature-settings: "rounding" 1;
 }
 
-/* Smooth scrolling */
-html {
+/* Smooth scrolling - applied via data attribute for Next.js route transition compatibility */
+html[data-scroll-behavior="smooth"] {
   scroll-behavior: smooth;
 }
 
