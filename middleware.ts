@@ -7,6 +7,7 @@ const protectedRoutes: Record<string, string[]> = {
   "/employee": ["admin", "employee"],
   "/citizen": ["admin", "employee", "citizen"],
   "/partner": ["admin", "partner"],
+  "/g2g": ["admin", "employee"],
 }
 
 // Public routes that don't require authentication
@@ -19,7 +20,19 @@ const publicRoutes = [
   "/api/services",
   "/api/services/categories",
   "/api/services/search",
+  "/about",
+  "/contact",
+  "/privacy",
+  "/terms",
 ]
+
+// Role-based default dashboards
+const roleDashboards: Record<string, string> = {
+  admin: "/admin",
+  employee: "/employee",
+  citizen: "/citizen",
+  partner: "/partner",
+}
 
 export function middleware(request: NextRequest) {
   // Skip static files and images
@@ -42,16 +55,39 @@ export function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
-  // Get token from cookies
+  // Get token and user role from cookies
   const token = request.cookies.get("auth_token")?.value
+  const userRole = request.cookies.get("userRole")?.value
 
   // If no token, redirect to login
   if (!token) {
     return NextResponse.redirect(new URL("/auth/login", request.url))
   }
 
-  // For now, allow all authenticated requests
-  // In production, validate token and check role against protectedRoutes
+  // If authenticated but trying to access auth pages, redirect to dashboard
+  if (pathname.startsWith("/auth/")) {
+    const dashboard = roleDashboards[userRole || "citizen"]
+    return NextResponse.redirect(new URL(dashboard, request.url))
+  }
+
+  // Check role-based route protection
+  if (userRole) {
+    // Find which protected route this path belongs to
+    let requiredRole: string[] = []
+    for (const [route, roles] of Object.entries(protectedRoutes)) {
+      if (pathname === route || pathname.startsWith(route + "/")) {
+        requiredRole = roles
+        break
+      }
+    }
+
+    // If route requires specific role and user doesn't have it, redirect to dashboard
+    if (requiredRole.length > 0 && !requiredRole.includes(userRole)) {
+      const dashboard = roleDashboards[userRole]
+      return NextResponse.redirect(new URL(dashboard || "/citizen", request.url))
+    }
+  }
+
   return NextResponse.next()
 }
 
