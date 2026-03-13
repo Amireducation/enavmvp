@@ -14,11 +14,20 @@ export function usePWA() {
   const [isInstalled, setIsInstalled] = useState(false)
 
   useEffect(() => {
-    // Register service worker
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/service-worker.js').catch((error) => {
-        console.error('Service worker registration failed:', error)
-      })
+    // Register service worker only in production and if file exists
+    if ('serviceWorker' in navigator && process.env.NODE_ENV === 'production') {
+      // Check if service worker file exists before registering
+      fetch('/service-worker.js', { method: 'HEAD' })
+        .then((response) => {
+          if (response.ok && !response.redirected) {
+            navigator.serviceWorker.register('/service-worker.js').catch(() => {
+              // Silently fail - service worker is optional
+            })
+          }
+        })
+        .catch(() => {
+          // Service worker file doesn't exist, skip registration
+        })
     }
 
     // Check if running as PWA
