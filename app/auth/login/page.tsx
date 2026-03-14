@@ -88,7 +88,10 @@ export default function LoginPage() {
           citizen: '/citizen',
         }
         const destination = roleRoutes[userData.user.role] || '/citizen'
-        router.push(destination)
+        // Small delay to ensure cookies are set before redirect
+        setTimeout(() => {
+          router.push(destination)
+        }, 100)
       }
     } catch (err) {
       setError("An error occurred during login. Please try again.")
