@@ -1,5 +1,6 @@
 -- Ethiopian Navigator Complete Database Seed Script
 -- This script seeds all essential data for the MVP demo
+-- Uses INSERT ... ON CONFLICT to avoid foreign key constraint violations
 
 -- ============================================
 -- 1. SEED DEMO USERS (with proper password hashing)
@@ -8,10 +9,7 @@
 -- First, ensure pgcrypto extension is available
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
--- Clear existing demo users if any
-DELETE FROM users WHERE email LIKE '%@demo.enav';
-
--- Insert demo users with hashed passwords
+-- Insert demo users (only if they don't exist)
 INSERT INTO users (id, email, password_hash, full_name, role, status, preferred_language, email_verified)
 VALUES
   (gen_random_uuid(), 'citizen@demo.enav', crypt('citizen123', gen_salt('bf')), 'Demo Citizen', 'citizen', 'active', 'en', true),
@@ -27,9 +25,6 @@ ON CONFLICT (email) DO UPDATE SET
 -- 2. SEED SERVICE CATEGORIES
 -- ============================================
 
--- Clear and insert service categories
-DELETE FROM service_categories WHERE name LIKE 'Demo%' OR id IN (SELECT id FROM service_categories WHERE is_active = true);
-
 INSERT INTO service_categories (id, name, name_am, name_or, description, icon, sort_order, is_active)
 VALUES
   (gen_random_uuid(), 'Business Registration', 'የንግድ ምዝገባ', 'Galmee Daldalaa', 'Services related to registering and licensing businesses', 'building-2', 1, true),
@@ -38,13 +33,11 @@ VALUES
   (gen_random_uuid(), 'Civil Registration', 'የሲቪል ምዝገባ', 'Galmee Siivikii', 'Birth, death, marriage, and identity documents', 'user-check', 4, true),
   (gen_random_uuid(), 'Investment Services', 'የኢንቨስትመንት አገልግሎቶች', 'Tajaajila Investimentii', 'Investment permits and incentives', 'trending-up', 5, true),
   (gen_random_uuid(), 'Land & Property', 'መሬት እና ንብረት', 'Lafa fi Qabeenyaa', 'Land registration and property services', 'map-pin', 6, true)
-ON CONFLICT DO NOTHING;
+ON CONFLICT (name) DO NOTHING;
 
 -- ============================================
 -- 3. SEED BUSINESS SECTORS
 -- ============================================
-
-DELETE FROM business_sectors WHERE is_active = true;
 
 INSERT INTO business_sectors (id, name, name_am, name_or, code, description, icon, is_active)
 VALUES
@@ -55,13 +48,11 @@ VALUES
   (gen_random_uuid(), 'Construction', 'ኮንስትራክሽን', 'Ijaarsa', 'CON', 'Construction and real estate', 'building', true),
   (gen_random_uuid(), 'Tourism & Hospitality', 'ቱሪዝም እና እንግዳ ተቀባይነት', 'Turizimii', 'TOR', 'Hotels, restaurants, and tourism', 'plane', true),
   (gen_random_uuid(), 'Financial Services', 'የፋይናንስ አገልግሎቶች', 'Tajaajila Faayinaansii', 'FIN', 'Banking and financial services', 'banknote', true)
-ON CONFLICT DO NOTHING;
+ON CONFLICT (code) DO NOTHING;
 
 -- ============================================
 -- 4. SEED BUSINESS ENTITY TYPES
 -- ============================================
-
-DELETE FROM business_entity_types WHERE is_active = true;
 
 INSERT INTO business_entity_types (id, name, name_am, name_or, code, description, is_active)
 VALUES
@@ -70,81 +61,56 @@ VALUES
   (gen_random_uuid(), 'Share Company', 'አክሲዮን ማኅበር', 'Waldaa Aksiyoona', 'SC', 'Share company / corporation', true),
   (gen_random_uuid(), 'Partnership', 'ሽርክና', 'Hirmaannaa', 'PART', 'Business partnership', true),
   (gen_random_uuid(), 'Cooperative', 'ህብረት ስራ ማህበር', 'Waldaa Tumsa', 'COOP', 'Cooperative society', true)
-ON CONFLICT DO NOTHING;
+ON CONFLICT (code) DO NOTHING;
 
 -- ============================================
--- 5. SEED SERVICES
+-- 5. SEED SERVICES (simplified with hardcoded UUIDs for category lookup)
 -- ============================================
 
--- Get category IDs for reference
-DO $$
-DECLARE
-  cat_business_reg UUID;
-  cat_tax UUID;
-  cat_trade UUID;
-  cat_civil UUID;
-  cat_investment UUID;
-  cat_land UUID;
-BEGIN
-  SELECT id INTO cat_business_reg FROM service_categories WHERE name = 'Business Registration' LIMIT 1;
-  SELECT id INTO cat_tax FROM service_categories WHERE name = 'Tax Services' LIMIT 1;
-  SELECT id INTO cat_trade FROM service_categories WHERE name = 'Trade & Commerce' LIMIT 1;
-  SELECT id INTO cat_civil FROM service_categories WHERE name = 'Civil Registration' LIMIT 1;
-  SELECT id INTO cat_investment FROM service_categories WHERE name = 'Investment Services' LIMIT 1;
-  SELECT id INTO cat_land FROM service_categories WHERE name = 'Land & Property' LIMIT 1;
+-- Insert services with service_category names lookup
+INSERT INTO services (id, name, name_am, name_or, description, description_am, description_or, category_id, service_fee, estimated_processing_days, online_available, status, target_audience, core_type)
+SELECT 
+  gen_random_uuid(), 'Business Registration Certificate', 'የንግድ ምዝገባ የምስክር ወረቀት', 'Waraqaa Ragaa Galmee Daldalaa', 
+  'Register a new business and obtain official registration certificate', 
+  'አዲስ ንግድ ይመዝግቡ እና ኦፊሴላዊ የምዝገባ ምስክር ወረቀት ያግኙ',
+  'Daldala haaraa galmeessuu fi waraqaa ragaa galmee argachuu',
+  id, 500.00, 5, true, 'active', 'business', 'G2B'
+FROM service_categories WHERE name = 'Business Registration'
+ON CONFLICT (name) DO NOTHING;
 
-  -- Insert services
-  INSERT INTO services (id, name, name_am, name_or, description, description_am, description_or, category_id, service_fee, estimated_processing_days, online_available, status, target_audience, core_type)
-  VALUES
-    (gen_random_uuid(), 'Business Registration Certificate', 'የንግድ ምዝገባ የምስክር ወረቀት', 'Waraqaa Ragaa Galmee Daldalaa', 
-     'Register a new business and obtain official registration certificate', 
-     'አዲስ ንግድ ይመዝግቡ እና ኦፊሴላዊ የምዝገባ ምስክር ወረቀት ያግኙ',
-     'Daldala haaraa galmeessuu fi waraqaa ragaa galmee argachuu',
-     cat_business_reg, 500.00, 5, true, 'active', 'business', 'G2B'),
-    
-    (gen_random_uuid(), 'TIN Registration', 'የቲን ምዝገባ', 'Galmee TIN',
-     'Register for Tax Identification Number (TIN)',
-     'የግብር መለያ ቁጥር (TIN) ይመዝገቡ',
-     'Lakkoofsa Addaa Gibiraa (TIN) galmeeffachuu',
-     cat_tax, 0.00, 3, true, 'active', 'both', 'G2B'),
-    
-    (gen_random_uuid(), 'Trade License Renewal', 'የንግድ ፈቃድ እድሳት', 'Haaromsa Hayyama Daldalaa',
-     'Renew your existing trade license',
-     'ያለዎትን የንግድ ፈቃድ ያድሱ',
-     'Hayyama daldalaa qabdan haaromsaa',
-     cat_trade, 1000.00, 7, true, 'active', 'business', 'G2B'),
-    
-    (gen_random_uuid(), 'Import Permit', 'የማስገባት ፈቃድ', 'Hayyama Galchuu',
-     'Apply for import permit for goods',
-     'ለእቃዎች የማስገባት ፈቃድ ያመልክቱ',
-     'Meeshaalee galchuuf hayyama gaafachuu',
-     cat_trade, 2500.00, 14, true, 'active', 'business', 'G2B'),
-    
-    (gen_random_uuid(), 'Birth Certificate', 'የልደት ምስክር ወረቀት', 'Waraqaa Ragaa Dhalootaa',
-     'Obtain official birth certificate',
-     'ኦፊሴላዊ የልደት ምስክር ወረቀት ያግኙ',
-     'Waraqaa ragaa dhalootaa mootummaa argachuu',
-     cat_civil, 100.00, 2, true, 'active', 'citizen', 'G2C'),
-    
-    (gen_random_uuid(), 'Investment Permit', 'የኢንቨስትመንት ፈቃድ', 'Hayyama Investimentii',
-     'Apply for domestic or foreign investment permit',
-     'ለአገር ውስጥ ወይም ለውጭ ኢንቨስትመንት ፈቃድ ያመልክቱ',
-     'Hayyama investimentii biyya keessaa yookaan alaa gaafachuu',
-     cat_investment, 5000.00, 21, true, 'active', 'business', 'G2B'),
-    
-    (gen_random_uuid(), 'Land Use Certificate', 'የመሬት አጠቃቀም ምስክር ወረቀት', 'Waraqaa Ragaa Fayyadama Lafaa',
-     'Obtain land use rights certificate',
-     'የመሬት አጠቃቀም መብት ምስክር ወረቀት ያግኙ',
-     'Waraqaa ragaa mirga fayyadama lafaa argachuu',
-     cat_land, 3000.00, 30, true, 'active', 'both', 'G2B')
-  ON CONFLICT DO NOTHING;
-END $$;
+INSERT INTO services (id, name, name_am, name_or, description, description_am, description_or, category_id, service_fee, estimated_processing_days, online_available, status, target_audience, core_type)
+SELECT 
+  gen_random_uuid(), 'TIN Registration', 'የቲን ምዝገባ', 'Galmee TIN',
+  'Register for Tax Identification Number (TIN)',
+  'የግብር መለያ ቁጥር (TIN) ይመዝገቡ',
+  'Lakkoofsa Addaa Gibiraa (TIN) galmeeffachuu',
+  id, 0.00, 3, true, 'active', 'both', 'G2B'
+FROM service_categories WHERE name = 'Tax Services'
+ON CONFLICT (name) DO NOTHING;
+
+INSERT INTO services (id, name, name_am, name_or, description, description_am, description_or, category_id, service_fee, estimated_processing_days, online_available, status, target_audience, core_type)
+SELECT 
+  gen_random_uuid(), 'Trade License Renewal', 'የንግድ ፈቃድ እድሳት', 'Haaromsa Hayyama Daldalaa',
+  'Renew your existing trade license',
+  'ያለዎትን የንግድ ፈቃድ ያድሱ',
+  'Hayyama daldalaa qabdan haaromsaa',
+  id, 1000.00, 7, true, 'active', 'business', 'G2B'
+FROM service_categories WHERE name = 'Trade & Commerce'
+ON CONFLICT (name) DO NOTHING;
+
+INSERT INTO services (id, name, name_am, name_or, description, description_am, description_or, category_id, service_fee, estimated_processing_days, online_available, status, target_audience, core_type)
+SELECT 
+  gen_random_uuid(), 'Birth Certificate', 'የልደት ምስክር ወረቀት', 'Waraqaa Ragaa Dhalootaa',
+  'Obtain official birth certificate',
+  'ኦፊሴላዊ የልደት ምስክር ወረቀት ያግኙ',
+  'Waraqaa ragaa dhalootaa mootummaa argachuu',
+  id, 100.00, 2, true, 'active', 'citizen', 'G2C'
+FROM service_categories WHERE name = 'Civil Registration'
+ON CONFLICT (name) DO NOTHING;
 
 -- ============================================
--- 6. SEED FAQs
+-- 6. SEED FAQs (without DELETE to avoid constraint violations)
 -- ============================================
-
-DELETE FROM faqs WHERE status = 'published';
 
 INSERT INTO faqs (id, question, question_am, question_or, answer, answer_am, answer_or, category, status, is_featured, sort_order)
 VALUES
