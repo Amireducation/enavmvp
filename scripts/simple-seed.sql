@@ -120,39 +120,16 @@ WHERE NOT EXISTS (SELECT 1 FROM business_entity_types WHERE code = 'SC');
 -- 5. SEED NOTIFICATION PREFERENCES
 -- ============================================
 
-INSERT INTO notification_preferences (id, user_id, email_notifications, sms_notifications, push_notifications, quiet_hours_start, quiet_hours_end, created_at)
-SELECT u.id, u.id, true, false, true, '18:00'::time, '08:00'::time, NOW()
+INSERT INTO notification_preferences (id, user_id, email_enabled, sms_enabled, push_enabled, in_app_enabled, quiet_hours_start, quiet_hours_end, language, created_at)
+SELECT gen_random_uuid(), u.id, true, false, true, true, '18:00'::time, '08:00'::time, 'en', NOW()
 FROM users u
 WHERE NOT EXISTS (SELECT 1 FROM notification_preferences WHERE user_id = u.id);
 
 -- ============================================
--- 6. SEED ANNOUNCEMENTS
+-- SEED DATA COMPLETE
 -- ============================================
-
-INSERT INTO announcements (id, title, title_am, title_or, content, content_am, content_or, type, priority, target_audience, status, published_at, created_at)
-SELECT 
-  gen_random_uuid(),
-  'Welcome to Ethiopian Navigator',
-  'ወደ ኢትዮጵያ ናቪጌተር ደህና መጡ',
-  'Gara Ethiopian Navigator kan baga jirta',
-  'Welcome to the new digital service platform for government, businesses, and citizens',
-  'ለመንግስት፣ ለንግዶች እና ለዜጋዎች አዲስ ዲጂታል አገልግሎት ፕላትፎርም ግብዓት',
-  'Mana tajaajila dijitaalaa haaraa kan mootummaa, daldalaa, fi muggicha',
-  'general',
-  'high',
-  'all',
-  'published',
-  NOW(),
-  NOW()
-WHERE NOT EXISTS (SELECT 1 FROM announcements WHERE title = 'Welcome to Ethiopian Navigator');
-
--- ============================================
--- 7. SUMMARY
--- ============================================
--- Seed data completed successfully!
--- Demo Users: citizen@demo.enav, employee@demo.enav, partner@demo.enav, admin@demo.enav (all use password ending in 123)
--- Service Categories: 4 categories added
--- Business Sectors: 4 sectors added
--- Entity Types: 3 entity types added
--- Notification Preferences: Set for all demo users
--- Announcements: 1 welcome announcement added
+-- Demo Users created: citizen@demo.enav, employee@demo.enav, partner@demo.enav, admin@demo.enav
+-- Service Categories: Business Registration, Tax Services, Trade & Commerce, Civil Registration
+-- Business Sectors: Manufacturing, Technology, Trade & Retail, Agriculture
+-- Entity Types: Sole Proprietorship, Private Limited Company, Share Company
+-- Notification Preferences: Enabled for all demo users
