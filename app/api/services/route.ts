@@ -35,7 +35,7 @@ export async function GET(request: Request) {
 
     // Get total count
     const countResult = await sql.unsafe(`SELECT COUNT(*) as total FROM services s LEFT JOIN service_categories sc ON s.category_id = sc.id WHERE s.status = 'active' ${whereClause}`)
-    const total = parseInt(countResult[0].total)
+    const total = countResult && countResult.length > 0 ? parseInt(countResult[0].total) : 0
 
     // Get paginated results
     const services = await sql.unsafe(

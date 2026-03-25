@@ -17,7 +17,7 @@ export async function GET(request: Request) {
     }
 
     const countResult = await sql.unsafe(`SELECT COUNT(*) as total FROM notifications ${whereClause}`)
-    const total = parseInt(countResult[0].total)
+    const total = countResult && countResult.length > 0 ? parseInt(countResult[0].total) : 0
 
     const notifications = await sql.unsafe(`
       SELECT id, type, title, message, is_read, priority,
