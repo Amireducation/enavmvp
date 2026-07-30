@@ -80,7 +80,18 @@ export default function LoginPage() {
         authLib.setToken(userData.token)
         authLib.setUser(userData.user)
         setUser(userData.user)
-        router.push(`/${userData.user.role}/dashboard`)
+        // Redirect to appropriate dashboard based on role
+        const roleRoutes: Record<string, string> = {
+          admin: '/admin',
+          employee: '/employee',
+          partner: '/partner',
+          citizen: '/citizen',
+        }
+        const destination = roleRoutes[userData.user.role] || '/citizen'
+        // Small delay to ensure cookies are set before redirect
+        setTimeout(() => {
+          router.push(destination)
+        }, 100)
       }
     } catch (err) {
       setError("An error occurred during login. Please try again.")

@@ -74,7 +74,8 @@ export async function POST(request: Request) {
     }
     const token = btoa(JSON.stringify({ alg: "none" })) + "." + btoa(JSON.stringify(tokenPayload)) + ".signature"
 
-    return successResponse({
+    // Create response with token and user data
+    const response = successResponse({
       token,
       user: {
         id: user.id,
@@ -84,6 +85,33 @@ export async function POST(request: Request) {
         preferred_language: user.preferred_language,
       },
     })
+
+    // Set HTTP-only cookies for middleware to read
+    response.cookies.set('auth_token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 86400, // 24 hours
+      path: '/',
+    })
+
+    response.cookies.set('userRole', user.role, {
+      httpOnly: false, // Allow JavaScript access to role for UI logic
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 86400, // 24 hours
+      path: '/',
+    })
+
+    response.cookies.set('userId', user.id, {
+      httpOnly: false,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 86400, // 24 hours
+      path: '/',
+    })
+
+    return response
   } catch (error) {
     console.error("Login error:", error)
     return errorResponse(
